@@ -34,23 +34,14 @@ void resetCamera();
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 GLuint loadTexture(const char* filename);
-//void buildCoordinateVectors(Shader shader, GLuint axisX, GLuint axisY, GLuint axisZ);
-void buildRacket(Shader &shader, GLuint initialCube, float offsetX, float offsetY, float offsetZ, int id);
-void build_O_letter(Shader &shader, GLuint initialCube, float offsetX, float offsetY, float offsetZ, int id);
-void build_M_letter(Shader &shader, GLuint initialCube, float offsetX, float offsetY, float offsetZ, int id);
-void build_A_letter(Shader &shader, GLuint initialCube, float offsetX, float offsetY, float offsetZ, int id);
-void build_R_letter(Shader &shader, GLuint initialCube, float offsetX, float offsetY, float offsetZ, int id);
-void buildNet(Shader &shader, GLuint initialCube);
-//void buildGround(Shader &shader, GLuint VAO, GLuint initialCube);
 void drawScene(Shader shader, GLuint initialCube, GLuint blueBigCube);
 void buildBackground(Shader &shader, GLuint blueBigCube);
-void buildBuildingA(Shader &shader, GLuint initialCube);
-void buildBuildingB(Shader &shader, GLuint initialCube);
-void buildBuildingC(Shader &shader, GLuint initialCube);
-void buildBuildingD(Shader &shader, GLuint initialCube);
+void buildBuildingAB(Shader &shader, GLuint initialCube);
+void buildBuildingCD(Shader &shader, GLuint initialCube);
+void buildScraper(Shader &shader, GLuint initialCube);
 void buildTree(Shader &shader, GLuint initialCube);
 void buildStreet(Shader &shader, GLuint initialCube);
-
+void buildStreetDecor(Shader &shader, GLuint initialCube);
 
 const unsigned int SCR_WIDTH = 1024;
 const unsigned int SCR_HEIGHT = 768;
@@ -90,18 +81,7 @@ mat4 armScale[2];
 Location locations[2] = {{0.0f, 0.0f, 13.0f},
                          {0.0f, 0.0f, -13.0f},};
 
-// the following 3 variables hold the values of the scaleMatrix to facilitate modifications later on
-float scaleX[2] = {0.35f, 0.35f};
-float scaleY[2] = {0.35f, 0.35f};
-float scaleZ[2] = {0.35f, 0.35f};
 
-// the following is the current angle of the hand
-float angleOfRackets[2] = {radians(0.0f), radians(0.0f), };
-
-// this part is for rendering type: triangles, lines, points
-bool isTriangles = true;
-bool isLines = false;
-bool isPoints = false;
 
 // this variable will hold 0, 1, 2, 3 depending on the racket we have focus on. it also can have -1 if all rackets are selected
 int activeRacket = 0;
@@ -117,6 +97,11 @@ unsigned int treeTexture;
 unsigned int tree2Texture;
 unsigned int woodTexture;
 unsigned int streetTexture;
+unsigned int floorTexture;
+unsigned int scraperTexture;
+unsigned int firehydrantTexture;
+unsigned int stopTexture;
+
 int main(int argc, char* argv[])
 {
     // Initialize GLFW and OpenGL version
@@ -170,8 +155,10 @@ int main(int argc, char* argv[])
     tree2Texture = loadTexture("rec/textures/tree2.png");
     woodTexture = loadTexture("rec/textures/wood.png");
     streetTexture = loadTexture("rec/textures/street.png");
-
-
+    floorTexture = loadTexture("rec/textures/brick.jpg");
+    scraperTexture = loadTexture("rec/textures/scraper.png");
+    firehydrantTexture = loadTexture("rec/textures/firehydrant.png");
+    stopTexture = loadTexture("rec/textures/stop.png");
     const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
 
     unsigned int depthMapFBO;
@@ -291,7 +278,7 @@ int main(int argc, char* argv[])
 void buildBackground(Shader &shader, GLuint blueBigCube) {
 
     glBindVertexArray(blueBigCube);// Big Blue Cube
-    translateMatrix = translate(mat4(1.0f), vec3(0.0f, 60.0f, 0.0f));
+    translateMatrix = translate(mat4(1.0f), vec3(0.0f, 69.8f, 0.0f));
     rotateMatrix = rotate(mat4(1.0f), radians(0.0f), vec3(0.0f, 0.0f, 1.0f));
     scaleMatrix = scale(mat4(1.0f), vec3(500.0f, 70.0f, 500.0f));
     modelMatrix = translateMatrix * rotateMatrix * scaleMatrix;
@@ -310,16 +297,15 @@ void buildBackground(Shader &shader, GLuint blueBigCube) {
 
 void drawScene(Shader shader, GLuint initialCube, GLuint blueBigCube) {
     buildBackground(shader, blueBigCube);
-    buildBuildingA(shader, initialCube);
-    buildBuildingB(shader, initialCube);
-    buildBuildingC(shader, initialCube);
-    buildBuildingD(shader, initialCube);
+    buildBuildingAB(shader, initialCube);
+    buildBuildingCD(shader, initialCube);
+    buildScraper(shader, initialCube);
     buildTree(shader, initialCube);
     buildStreet(shader, initialCube);
+    buildStreetDecor(shader, initialCube);
 }
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         camera.ProcessKeyboard(FORWARD, deltaTime);
@@ -329,42 +315,6 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         camera.ProcessKeyboard(LEFT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         camera.ProcessKeyboard(RIGHT, deltaTime);
-
-    /*
-    // move camera position using ASDW keys
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        locations[activeRacket].y+=1.0f;
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        locations[activeRacket].y-=1.0f;
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        locations[activeRacket].x-=1.0f;
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        locations[activeRacket].x+=1.0f;
-
-     */
-    // move camera down
-    if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
-        activeRacket = 0;
-        resetCamera();
-    }
-
-    // move camera up
-    if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) {
-        activeRacket = 1;
-        resetCamera();
-    }
-
-    // move camera to the right
-    if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS) {
-        activeRacket = 2;
-        resetCamera();
-    }
-
-    // move camera to the left
-    if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS) {
-        activeRacket = 3;
-        resetCamera();
-    }
 
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && !noShadowsKeyPressed)
     {
@@ -469,24 +419,36 @@ GLuint loadTexture(const char* filename)
     return textureId;
 }
 
-void buildBuildingA(Shader &shader, GLuint initialCube) {
+void buildBuildingAB(Shader &shader, GLuint initialCube) {
 
     glBindVertexArray(initialCube);// CUBE BASE
     for(int i=0;i<3;i++) {
-        translateMatrix = translate(mat4(1.0f), vec3(-115.0f+i*100, 10.0f, -115.0f));
+        //Builds BuildingA
+        translateMatrix = translate(mat4(1.0f), vec3(-115.0f+i*100, 20.0f, -115.0f));
         scaleMatrix = scale(mat4(1.0f), vec3(25.0f, 20.0f, 25.0f));
         modelMatrix = translateMatrix * scaleMatrix;
         shader.setMat4("modelMatrix", modelMatrix);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, buildingATexture);
         glDrawArrays(GL_TRIANGLES, 0, 36);
-    }
-}
-void buildBuildingB(Shader &shader, GLuint initialCube) {
-
-    glBindVertexArray(initialCube);// CUBE BASE
-    for(int i=0;i<3;i++) {
-        translateMatrix = translate(mat4(1.0f), vec3(-90.0f+i*100, 10.0f, -115.0f));
+        //builds Building B
+        translateMatrix = translate(mat4(1.0f), vec3(-90.0f+i*100, 20.0f, -115.0f));
+        scaleMatrix = scale(mat4(1.0f), vec3(25.0f, 20.0f, 25.0f));
+        modelMatrix = translateMatrix * scaleMatrix;
+        shader.setMat4("modelMatrix", modelMatrix);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, buildingBTexture);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        //Builds BuildingA other side
+        translateMatrix = translate(mat4(1.0f), vec3(-115.0f+i*100, 20.0f, 115.0f));
+        scaleMatrix = scale(mat4(1.0f), vec3(25.0f, 20.0f, 25.0f));
+        modelMatrix = translateMatrix * scaleMatrix;
+        shader.setMat4("modelMatrix", modelMatrix);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, buildingATexture);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        //builds Building B other side
+        translateMatrix = translate(mat4(1.0f), vec3(-90.0f+i*100, 20.0f, 115.0f));
         scaleMatrix = scale(mat4(1.0f), vec3(25.0f, 20.0f, 25.0f));
         modelMatrix = translateMatrix * scaleMatrix;
         shader.setMat4("modelMatrix", modelMatrix);
@@ -495,24 +457,37 @@ void buildBuildingB(Shader &shader, GLuint initialCube) {
         glDrawArrays(GL_TRIANGLES, 0, 36);
     }
 }
-void buildBuildingC(Shader &shader, GLuint initialCube) {
+// this builds buildings CD
 
+void buildBuildingCD(Shader &shader, GLuint initialCube) {
     glBindVertexArray(initialCube);// CUBE BASE
     for(int i=0;i<2;i++) {
-        translateMatrix = translate(mat4(1.0f), vec3(-65.0f+i*100, 10.0f, -115.0f));
+        //Builds Building C
+        translateMatrix = translate(mat4(1.0f), vec3(-65.0f+i*100, 20.0f, -115.0f));
+        scaleMatrix = scale(mat4(1.0f), vec3(25.0f, 20.0f, 25.0f));
+        modelMatrix = translateMatrix * scaleMatrix;
+        shader.setMat4("modelMatrix", modelMatrix);
+        glActiveTexture(GL_TEXTURE0);
+        //Builds BuildingD
+        glBindTexture(GL_TEXTURE_2D, buildingCTexture);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        translateMatrix = translate(mat4(1.0f), vec3(-40.0f+i*100, 20.0f, -115.0f));
+        scaleMatrix = scale(mat4(1.0f), vec3(25.0f, 20.0f, 25.0f));
+        modelMatrix = translateMatrix * scaleMatrix;
+        shader.setMat4("modelMatrix", modelMatrix);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, buildingDTexture);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        //Builds Building C other side
+        translateMatrix = translate(mat4(1.0f), vec3(-65.0f+i*100, 20.0f, 115.0f));
         scaleMatrix = scale(mat4(1.0f), vec3(25.0f, 20.0f, 25.0f));
         modelMatrix = translateMatrix * scaleMatrix;
         shader.setMat4("modelMatrix", modelMatrix);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, buildingCTexture);
         glDrawArrays(GL_TRIANGLES, 0, 36);
-    }
-}
-void buildBuildingD(Shader &shader, GLuint initialCube) {
-
-    glBindVertexArray(initialCube);// CUBE BASE
-    for(int i=0;i<2;i++) {
-        translateMatrix = translate(mat4(1.0f), vec3(-40.0f+i*100, 10.0f, -115.0f));
+        //Builds Building D other side
+        translateMatrix = translate(mat4(1.0f), vec3(-40.0f+i*100, 20.0f, 115.0f));
         scaleMatrix = scale(mat4(1.0f), vec3(25.0f, 20.0f, 25.0f));
         modelMatrix = translateMatrix * scaleMatrix;
         shader.setMat4("modelMatrix", modelMatrix);
@@ -521,11 +496,23 @@ void buildBuildingD(Shader &shader, GLuint initialCube) {
         glDrawArrays(GL_TRIANGLES, 0, 36);
     }
 }
+//this builds the main building in the center
+void buildScraper(Shader &shader, GLuint initialCube) {
+    glBindVertexArray(initialCube);// CUBE BASE
+    translateMatrix = translate(mat4(1.0f), vec3(12.5f, 40.0f, 0.0f));
+    scaleMatrix = scale(mat4(1.0f), vec3(25.0f, 40.0f, 25.0f));
+    modelMatrix = translateMatrix * scaleMatrix;
+    shader.setMat4("modelMatrix", modelMatrix);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, scraperTexture);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+}
 void buildTree(Shader &shader, GLuint initialCube) {
     glBindVertexArray(initialCube);// CUBE BASE
-    // building bark
+
     for(int i=0;i<10;i++) {
-        translateMatrix = translate(mat4(1.0f), vec3(-102.5f+i*25, -2.5f, -115.0f));
+        // building bark
+        translateMatrix = translate(mat4(1.0f), vec3(-102.5f+i*25, 7.5f, -115.0f));
         scaleMatrix = scale(mat4(1.0f), vec3(7.5f, 7.5f, 7.5f));
         modelMatrix = translateMatrix * scaleMatrix;
         shader.setMat4("modelMatrix", modelMatrix);
@@ -533,7 +520,26 @@ void buildTree(Shader &shader, GLuint initialCube) {
         glBindTexture(GL_TEXTURE_2D, woodTexture);
         glDrawArrays(GL_TRIANGLES, 0, 36);
         //building upper tree
-        translateMatrix = translate(mat4(1.0f), vec3(-102.5f+i*25, 10.0f, -115.0f));
+        translateMatrix = translate(mat4(1.0f), vec3(-102.5f+i*25, 15.0f, -115.0f));
+        scaleMatrix = scale(mat4(1.0f), vec3(17.5f, 7.5f, 17.5f));
+        modelMatrix = translateMatrix * scaleMatrix;
+        shader.setMat4("modelMatrix", modelMatrix);
+        glActiveTexture(GL_TEXTURE0);
+        if (i % 2 == 1) {
+            glBindTexture(GL_TEXTURE_2D, tree2Texture);
+        } else {
+            glBindTexture(GL_TEXTURE_2D, treeTexture);
+        }
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        translateMatrix = translate(mat4(1.0f), vec3(-102.5f+i*25, 7.5f, 115.0f));
+        scaleMatrix = scale(mat4(1.0f), vec3(7.5f, 7.5f, 7.5f));
+        modelMatrix = translateMatrix * scaleMatrix;
+        shader.setMat4("modelMatrix", modelMatrix);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, woodTexture);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        //building upper tree
+        translateMatrix = translate(mat4(1.0f), vec3(-102.5f+i*25, 15.0f, 115.0f));
         scaleMatrix = scale(mat4(1.0f), vec3(17.5f, 7.5f, 17.5f));
         modelMatrix = translateMatrix * scaleMatrix;
         shader.setMat4("modelMatrix", modelMatrix);
@@ -547,17 +553,67 @@ void buildTree(Shader &shader, GLuint initialCube) {
     }
 }
 void buildStreet(Shader &shader, GLuint initialCube) {
-
     glBindVertexArray(initialCube);// CUBE BASE
-
-    translateMatrix = translate(mat4(1.0f), vec3(0.0f, -9.9f, -100.0f));
-    scaleMatrix = scale(mat4(1.0f), vec3(25.0f , 0.0f, 500.0f ));
+    // this builds the street
+    for (int i = 0; i < 2; i++) {
+    translateMatrix = translate(mat4(1.0f), vec3(0.0f, -0.01f, -100.0f+i*200));
+    scaleMatrix = scale(mat4(1.0f), vec3(25.0f, 0.0f, 500.0f));
     rotateMatrix = rotate(mat4(1.0f), radians(90.0f), vec3(0.0f, 1.0f, 0.0f));
     modelMatrix = translateMatrix * rotateMatrix * scaleMatrix;
     shader.setMat4("modelMatrix", modelMatrix);
-
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, streetTexture);
     glDrawArrays(GL_TRIANGLES, 0, 36);
-
+    }
+    for(int i =0;i<3;i++) {
+        translateMatrix = translate(mat4(1.0f), vec3(-100.0f*i+100, -0.01f, 0.0f));
+        scaleMatrix = scale(mat4(1.0f), vec3(25.0f, 0.0f, 420.0f));
+        rotateMatrix = rotate(mat4(1.0f), radians(180.0f), vec3(0.0f, 1.0f, 0.0f));
+        modelMatrix = translateMatrix * rotateMatrix * scaleMatrix;
+        shader.setMat4("modelMatrix", modelMatrix);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+}
+void buildStreetDecor(Shader &shader, GLuint initialCube) {
+    //this builds the floor
+    translateMatrix = translate(mat4(1.0f), vec3(0.0f, -0.09f, 0.0f));
+    scaleMatrix = scale(mat4(1.0f), vec3(500.0f, 0.0f, 500.0f));
+    modelMatrix = translateMatrix * scaleMatrix;
+    shader.setMat4("modelMatrix", modelMatrix);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, floorTexture);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    //this builds the firehydrants
+    for (int i = 0; i < 5; i++) {
+        translateMatrix = translate(mat4(1.0f), vec3(-100.0f+i*50, 4.0f, -108.0f));
+        scaleMatrix = scale(mat4(1.0f), vec3(5.0f, 4.0f, 5.0f));
+        modelMatrix = translateMatrix * scaleMatrix;
+        shader.setMat4("modelMatrix", modelMatrix);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, firehydrantTexture);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        translateMatrix = translate(mat4(1.0f), vec3(-100.0f+i*50, 4.0f, 108.0f));
+        scaleMatrix = scale(mat4(1.0f), vec3(5.0f, 4.0f, 5.0f));
+        modelMatrix = translateMatrix * scaleMatrix;
+        shader.setMat4("modelMatrix", modelMatrix);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, firehydrantTexture);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+    for (int i = 0; i < 3; i++) {
+        translateMatrix = translate(mat4(1.0f), vec3(-90.0f+i*99, 8.0f, -90.0f));
+        scaleMatrix = scale(mat4(1.0f), vec3(0.5f, 8.0f, 5.0f));
+        modelMatrix = translateMatrix * scaleMatrix;
+        shader.setMat4("modelMatrix", modelMatrix);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, stopTexture);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        translateMatrix = translate(mat4(1.0f), vec3(-90.0f+i*99, 8.0f, 90.0f));
+        scaleMatrix = scale(mat4(1.0f), vec3(0.5f, 8.0f, 5.0f));
+        modelMatrix = translateMatrix * scaleMatrix;
+        shader.setMat4("modelMatrix", modelMatrix);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, stopTexture);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
 }
