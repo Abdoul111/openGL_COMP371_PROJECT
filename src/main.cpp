@@ -36,7 +36,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 GLuint loadTexture(const char* filename);
 void drawScene(Shader shader, GLuint initialCube, GLuint blueBigCube);
 void buildBackground(Shader &shader, GLuint blueBigCube);
-void buildBuildingAB(Shader &shader, GLuint initialCube);
+void buildBuildingABCD(Shader &shader, GLuint initialCube);
 void buildBuildingCD(Shader &shader, GLuint initialCube);
 void buildScraper(Shader &shader, GLuint initialCube);
 void buildTree(Shader &shader, GLuint initialCube);
@@ -88,17 +88,14 @@ int activeRacket = 0;
 
 
 // textures:
-unsigned int buildingATexture;
-unsigned int buildingBTexture;
-unsigned int buildingCTexture;
-unsigned int buildingDTexture;
+unsigned int buildingTextures[4];
 unsigned int backgroundTexture;
 unsigned int treeTexture;
 unsigned int tree2Texture;
 unsigned int woodTexture;
 unsigned int streetTexture;
 unsigned int floorTexture;
-unsigned int scraperTexture;
+unsigned int scraperTextures[6];
 unsigned int firehydrantTexture;
 unsigned int stopTexture;
 
@@ -146,17 +143,22 @@ int main(int argc, char* argv[])
 
     Shader shader("shaders/textureShader.vs", "shaders/textureShader.fs");
     Shader depthShader("shaders/depthShader.vs", "shaders/depthShader.fs", "shaders/depthShader.gs");
-    buildingATexture = loadTexture("rec/textures/building.png");
-    buildingBTexture = loadTexture("rec/textures/buildingB.png");
-    buildingCTexture = loadTexture("rec/textures/buildingC.png");
-    buildingDTexture = loadTexture("rec/textures/buildingD.png");
+    buildingTextures[0] = loadTexture("rec/textures/building.png");
+    buildingTextures[1] = loadTexture("rec/textures/buildingB.png");
+    buildingTextures[2] = loadTexture("rec/textures/buildingC.png");
+    buildingTextures[3] = loadTexture("rec/textures/buildingD.png");
     backgroundTexture = loadTexture("rec/textures/background.png");
     treeTexture = loadTexture("rec/textures/tree.png");
     tree2Texture = loadTexture("rec/textures/tree2.png");
     woodTexture = loadTexture("rec/textures/wood.png");
     streetTexture = loadTexture("rec/textures/street.png");
     floorTexture = loadTexture("rec/textures/brick.jpg");
-    scraperTexture = loadTexture("rec/textures/scraper.png");
+    scraperTextures[0] = loadTexture("rec/textures/scraper.png");
+    scraperTextures[1] = loadTexture("rec/textures/scraper2.png");
+    scraperTextures[2] = loadTexture("rec/textures/scraper3.png");
+    scraperTextures[3] = loadTexture("rec/textures/scraper4.png");
+    scraperTextures[4] = loadTexture("rec/textures/scraper5.png");
+    scraperTextures[5] = loadTexture("rec/textures/scraper6.png");
     firehydrantTexture = loadTexture("rec/textures/firehydrant.png");
     stopTexture = loadTexture("rec/textures/stop.png");
     const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
@@ -297,8 +299,8 @@ void buildBackground(Shader &shader, GLuint blueBigCube) {
 
 void drawScene(Shader shader, GLuint initialCube, GLuint blueBigCube) {
     buildBackground(shader, blueBigCube);
-    buildBuildingAB(shader, initialCube);
-    buildBuildingCD(shader, initialCube);
+    buildBuildingABCD(shader, initialCube);
+//    buildBuildingCD(shader, initialCube);
     buildScraper(shader, initialCube);
     buildTree(shader, initialCube);
     buildStreet(shader, initialCube);
@@ -419,93 +421,53 @@ GLuint loadTexture(const char* filename)
     return textureId;
 }
 
-void buildBuildingAB(Shader &shader, GLuint initialCube) {
+void buildBuildingABCD(Shader &shader, GLuint initialCube) {
 
     glBindVertexArray(initialCube);// CUBE BASE
-    for(int i=0;i<3;i++) {
+    for(int i=0;i<10;i++) {
         //Builds BuildingA
-        translateMatrix = translate(mat4(1.0f), vec3(-115.0f+i*100, 20.0f, -115.0f));
+        int textureIndex = i % 4;
+        translateMatrix = translate(mat4(1.0f), vec3(-115.0f+i*25, 20.0f, -115.0f));
         scaleMatrix = scale(mat4(1.0f), vec3(25.0f, 20.0f, 25.0f));
         modelMatrix = translateMatrix * scaleMatrix;
         shader.setMat4("modelMatrix", modelMatrix);
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, buildingATexture);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-        //builds Building B
-        translateMatrix = translate(mat4(1.0f), vec3(-90.0f+i*100, 20.0f, -115.0f));
-        scaleMatrix = scale(mat4(1.0f), vec3(25.0f, 20.0f, 25.0f));
-        modelMatrix = translateMatrix * scaleMatrix;
-        shader.setMat4("modelMatrix", modelMatrix);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, buildingBTexture);
+        glBindTexture(GL_TEXTURE_2D, buildingTextures[textureIndex]);
         glDrawArrays(GL_TRIANGLES, 0, 36);
         //Builds BuildingA other side
-        translateMatrix = translate(mat4(1.0f), vec3(-115.0f+i*100, 20.0f, 115.0f));
+
+        translateMatrix = translate(mat4(1.0f), vec3(-115.0f+i*25, 20.0f, 115.0f));
         scaleMatrix = scale(mat4(1.0f), vec3(25.0f, 20.0f, 25.0f));
         modelMatrix = translateMatrix * scaleMatrix;
         shader.setMat4("modelMatrix", modelMatrix);
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, buildingATexture);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-        //builds Building B other side
-        translateMatrix = translate(mat4(1.0f), vec3(-90.0f+i*100, 20.0f, 115.0f));
-        scaleMatrix = scale(mat4(1.0f), vec3(25.0f, 20.0f, 25.0f));
-        modelMatrix = translateMatrix * scaleMatrix;
-        shader.setMat4("modelMatrix", modelMatrix);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, buildingBTexture);
+        glBindTexture(GL_TEXTURE_2D, buildingTextures[textureIndex]);
         glDrawArrays(GL_TRIANGLES, 0, 36);
     }
 }
 // this builds buildings CD
 
-void buildBuildingCD(Shader &shader, GLuint initialCube) {
-    glBindVertexArray(initialCube);// CUBE BASE
-    for(int i=0;i<2;i++) {
-        //Builds Building C
-        translateMatrix = translate(mat4(1.0f), vec3(-65.0f+i*100, 20.0f, -115.0f));
-        scaleMatrix = scale(mat4(1.0f), vec3(25.0f, 20.0f, 25.0f));
-        modelMatrix = translateMatrix * scaleMatrix;
-        shader.setMat4("modelMatrix", modelMatrix);
-        glActiveTexture(GL_TEXTURE0);
-        //Builds BuildingD
-        glBindTexture(GL_TEXTURE_2D, buildingCTexture);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-        translateMatrix = translate(mat4(1.0f), vec3(-40.0f+i*100, 20.0f, -115.0f));
-        scaleMatrix = scale(mat4(1.0f), vec3(25.0f, 20.0f, 25.0f));
-        modelMatrix = translateMatrix * scaleMatrix;
-        shader.setMat4("modelMatrix", modelMatrix);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, buildingDTexture);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-        //Builds Building C other side
-        translateMatrix = translate(mat4(1.0f), vec3(-65.0f+i*100, 20.0f, 115.0f));
-        scaleMatrix = scale(mat4(1.0f), vec3(25.0f, 20.0f, 25.0f));
-        modelMatrix = translateMatrix * scaleMatrix;
-        shader.setMat4("modelMatrix", modelMatrix);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, buildingCTexture);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-        //Builds Building D other side
-        translateMatrix = translate(mat4(1.0f), vec3(-40.0f+i*100, 20.0f, 115.0f));
-        scaleMatrix = scale(mat4(1.0f), vec3(25.0f, 20.0f, 25.0f));
-        modelMatrix = translateMatrix * scaleMatrix;
-        shader.setMat4("modelMatrix", modelMatrix);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, buildingDTexture);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-    }
-}
+
 //this builds the main building in the center
 void buildScraper(Shader &shader, GLuint initialCube) {
     glBindVertexArray(initialCube);// CUBE BASE
-    translateMatrix = translate(mat4(1.0f), vec3(12.5f, 40.0f, 0.0f));
-    scaleMatrix = scale(mat4(1.0f), vec3(25.0f, 40.0f, 25.0f));
-    modelMatrix = translateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, scraperTexture);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
+    for(int i=0;i<3;i++) {
+
+        translateMatrix = translate(mat4(1.0f), vec3(12.5f, 40.0f, -50.0f+i*50));
+        scaleMatrix = scale(mat4(1.0f), vec3(25.0f, 40.0f, 25.0f));
+        modelMatrix = translateMatrix * scaleMatrix;
+        shader.setMat4("modelMatrix", modelMatrix);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, scraperTextures[i]);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        translateMatrix = translate(mat4(1.0f), vec3(-12.5f, 40.0f, -50.0f+i*50));
+        scaleMatrix = scale(mat4(1.0f), vec3(25.0f, 40.0f, 25.0f));
+        modelMatrix = translateMatrix * scaleMatrix;
+        shader.setMat4("modelMatrix", modelMatrix);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, scraperTextures[i+3]);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
 }
 void buildTree(Shader &shader, GLuint initialCube) {
     glBindVertexArray(initialCube);// CUBE BASE
