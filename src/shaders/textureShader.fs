@@ -27,7 +27,7 @@ float ShadowCalculation(vec3 fragPos)
     // now get current linear depth as the length between the fragment and light position
     float currentDepth = length(fragToLight);
     // test for noShadows
-    float bias = 0.05; // we use a much larger bias since depth is now in [near_plane, far_plane] range
+    float bias = 0.25; // we use a much larger bias since depth is now in [near_plane, far_plane] range
     float shadow = currentDepth -  bias > closestDepth ? 1.0 : 0.0;
     // display closestDepth as debug (to visualize depth cubemap)
     // FragColor = vec4(vec3(closestDepth / far_plane), 1.0);
@@ -36,12 +36,12 @@ float ShadowCalculation(vec3 fragPos)
 }
 
 void main()
-{           
+{
     vec3 color = texture(diffuseTexture, fs_in.TexCoords).rgb;
     vec3 normal = normalize(fs_in.Normal);
-    vec3 lightColor = vec3(0.3);
+    vec3 lightColor = vec3(0.7);
     // ambient
-    vec3 ambient = 0.3 * lightColor;
+    vec3 ambient = 0.6 * lightColor;
     // diffuse
     vec3 lightDir = normalize(lightPos - fs_in.FragPos);
     float diff = max(dot(lightDir, normal), 0.0);
