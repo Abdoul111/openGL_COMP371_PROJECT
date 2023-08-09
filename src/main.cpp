@@ -96,6 +96,15 @@ unsigned int adventureTexture;unsigned int haveyouTexture;unsigned int visitText
 int resolution = 65;
 int vertexCount = 6 * (resolution / 2) * resolution + 1;
 
+// positions of the point lights
+glm::vec3 pointLightPositions[] = {
+        glm::vec3( 0.0f,  5.0f,  50.0f),
+        glm::vec3( 0.0f, 5.0f, -50.0f)
+};
+
+bool isNight = false;
+bool isSpotLightOn = false;
+
 int main(int argc, char* argv[])
 {
     // Initialize GLFW and OpenGL version
@@ -200,8 +209,9 @@ int main(int argc, char* argv[])
     // shader configuration
     // --------------------
     shader.use();
-    shader.setInt("diffuseTexture", 0);
-    shader.setInt("depthMap", 1);
+    shader.setInt("material.diffuse", 0);
+    shader.setInt("material.specular", 1);
+    shader.setInt("depthMap", 2);
 
     // lighting info
     // -------------
@@ -240,7 +250,7 @@ int main(int argc, char* argv[])
         // --------------------------------
         glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
 
-        glActiveTexture(GL_TEXTURE1);
+        glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubemap);
         glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
         glClear(GL_DEPTH_BUFFER_BIT);
@@ -256,7 +266,54 @@ int main(int argc, char* argv[])
         // -------------------------
         glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
         shader.use();
+
+        shader.setVec3("viewPos", camera.Position);
+        shader.setFloat("material.shininess", 32.0f);
+        shader.setBool("isSpotLightOn", isSpotLightOn);
+
+        /*
+           Here we set all the uniforms for the 5/6 types of lights we have. We have to set them manually and index
+           the proper PointLight struct in the array to set each uniform variable. This can be done more code-friendly
+           by defining light types as classes and set their values in there, or by using a more efficient uniform approach
+           by using 'Uniform buffer objects', but that is something we'll discuss in the 'Advanced GLSL' tutorial.
+        */
+        // directional light
+        shader.setVec3("dirLight.direction", -0.2f, -1.0f, -0.3f);
+        if (!isNight) shader.setVec3("dirLight.ambient", 0.6f, 0.6f, 0.6f);
+        else shader.setVec3("dirLight.ambient", 0.1f, 0.1f, 0.1f);
+        shader.setVec3("dirLight.diffuse", 0.4f, 0.4f, 0.4f);
+        shader.setVec3("dirLight.specular", 0.5f, 0.5f, 0.5f);
+        // point light 1
+        shader.setVec3("pointLights[0].position", pointLightPositions[0]);
+        shader.setVec3("pointLights[0].ambient", 0.25f, 0.25f, 0.25f);
+        shader.setVec3("pointLights[0].diffuse", 0.8f, 0.8f, 0.8f);
+        shader.setVec3("pointLights[0].specular", 1.0f, 1.0f, 1.0f);
+        shader.setFloat("pointLights[0].constant", 1.0f);
+        shader.setFloat("pointLights[0].linear", 0.09f);
+        shader.setFloat("pointLights[0].quadratic", 0.032f);
+        // point light 2
+        shader.setVec3("pointLights[1].position", pointLightPositions[1]);
+        shader.setVec3("pointLights[1].ambient", 0.25f, 0.25f, 0.25f);
+        shader.setVec3("pointLights[1].diffuse", 0.8f, 0.8f, 0.8f);
+        shader.setVec3("pointLights[1].specular", 1.0f, 1.0f, 1.0f);
+        shader.setFloat("pointLights[1].constant", 1.0f);
+        shader.setFloat("pointLights[1].linear", 0.09f);
+        shader.setFloat("pointLights[1].quadratic", 0.032f);
+        // spotLight
+
+        shader.setVec3("spotLight.position", camera.Position);
+        shader.setVec3("spotLight.direction", camera.Front);
+        shader.setVec3("spotLight.ambient", 0.2f, 0.2f, 0.2f);
+        shader.setVec3("spotLight.diffuse", 1.0f, 1.0f, 1.0f);
+        shader.setVec3("spotLight.specular", 1.0f, 1.0f, 1.0f);
+        shader.setFloat("spotLight.constant", 1.0f);
+        shader.setFloat("spotLight.linear", 0.09f);
+        shader.setFloat("spotLight.quadratic", 0.032f);
+        shader.setFloat("spotLight.cutOff", glm::cos(glm::radians(17.5f)));
+        shader.setFloat("spotLight.outerCutOff", glm::cos(glm::radians(25.0f)));
+
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 1000.0f);
         glm::mat4 view = camera.GetViewMatrix();
         shader.setMat4("projectionMatrix", projection);
@@ -268,11 +325,14 @@ int main(int argc, char* argv[])
         shader.setInt("noShadows", noShadows); // enable/disable noShadows by pressing 'SPACE'
         shader.setFloat("far_plane", far_plane);
 
+        // bind diffuse map
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, backgroundTexture);
-
-        // DONT TOUCH
+        // bind specular map
         glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, backgroundTexture);
+        // DONT TOUCH
+        glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubemap);
 
         drawScene(shader, initialCube, blueBigCube);
@@ -329,6 +389,13 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         } else {
             camera.Position = initialCameraPos;
         }
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS && !noShadowsKeyPressed) {
+        isNight = !isNight;
+    }
+    if (glfwGetKey(window, GLFW_KEY_M) == GLFW_RELEASE) {
+        isSpotLightOn = !isSpotLightOn;
     }
 
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && !noShadowsKeyPressed) {
@@ -413,6 +480,9 @@ void buildBackground(Shader &shader, GLuint blueBigCube) {
 
     //shader.setVec3("color", 129.0f/255, 174.0f/255, 208.0f/255);
     glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, backgroundTexture);
+    // bind specular map
+    glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, backgroundTexture);
     glDisable(GL_CULL_FACE);
     shader.setInt("reverse_normals", 1);
@@ -641,15 +711,35 @@ void buildShops(Shader &shader, GLuint initialCube) {
 
 void buildLightCube(Shader &shader, GLuint sphere, vec3 lightPos) {
 
-    glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+    glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 1000.0f);
     glm::mat4 view = camera.GetViewMatrix();
 
     shader.use();
     shader.setMat4("projection", projection);
     shader.setMat4("view", view);
-    glm::mat4 model = glm::mat4(1.0f);
+    glm::mat4 model;
+
+    //////////////// 1 //////////////
     model = glm::mat4(1.0f);
     model = glm::translate(model, lightPos);
+    model = glm::scale(model, glm::vec3(1.0f)); // a smaller cube
+    shader.setMat4("model", model);
+
+    glBindVertexArray(sphere);
+    glDrawElements(GL_TRIANGLES, vertexCount ,GL_UNSIGNED_INT,(void*)0);
+
+    //////////////// 2 //////////////
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, pointLightPositions[0]);
+    model = glm::scale(model, glm::vec3(1.0f)); // a smaller cube
+    shader.setMat4("model", model);
+
+    glBindVertexArray(sphere);
+    glDrawElements(GL_TRIANGLES, vertexCount ,GL_UNSIGNED_INT,(void*)0);
+
+    //////////////// 3 //////////////
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, pointLightPositions[1]);
     model = glm::scale(model, glm::vec3(1.0f)); // a smaller cube
     shader.setMat4("model", model);
 
@@ -658,5 +748,6 @@ void buildLightCube(Shader &shader, GLuint sphere, vec3 lightPos) {
 }
 
 bool collisionDetection() {
-    return (camera.Position.y < bigWall.maxY && camera.Position.y > bigWall.minY)  &&  (camera.Position.x < bigWall.maxX && camera.Position.x > bigWall.minX)  &&  (camera.Position.z < bigWall.maxZ && camera.Position.z > bigWall.minZ);
+    return true;
+    //(camera.Position.y < bigWall.maxY && camera.Position.y > bigWall.minY)  &&  (camera.Position.x < bigWall.maxX && camera.Position.x > bigWall.minX)  &&  (camera.Position.z < bigWall.maxZ && camera.Position.z > bigWall.minZ);
 }
