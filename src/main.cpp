@@ -23,7 +23,6 @@
 #include "lib/stb_image.h"
 #include "lib/Camera.h"
 #include "lib/shader.h"
-//#include "lib/shader_m.h"
 #include "vao.h"
 
 using namespace glm;
@@ -41,6 +40,8 @@ void buildScrapers(Shader &shader, GLuint initialCube);
 void buildTree(Shader &shader, GLuint initialCube);
 void buildStreetAndDecor(Shader &shader, GLuint initialCube);
 void buildShops(Shader &shader, GLuint initialCube);
+
+void buildLightCube(Shader &shader, GLuint sphere, vec3 lightPos);
 
 const unsigned int SCR_WIDTH = 1024;
 const unsigned int SCR_HEIGHT = 768;
@@ -70,12 +71,17 @@ Location locations[2] = {{0.0f, 0.0f, 13.0f},
                          {0.0f, 0.0f, -13.0f},};
 
 
-
 // textures variables
 unsigned int buildingTextures[4];unsigned int balloonTextures[2];unsigned int shopTextures[6];unsigned int scraperTextures[6];
 unsigned int backgroundTexture;unsigned int treeTexture;unsigned int tree2Texture;unsigned int woodTexture;unsigned int streetTexture;
 unsigned int floorTexture;unsigned int firehydrantTexture;unsigned int stopTexture;unsigned int welcomeTexture;unsigned int heyTexture;
 unsigned int adventureTexture;unsigned int haveyouTexture;unsigned int visitTexture;
+
+// light sphere constants:
+// light sphere
+int resolution = 65;
+int vertexCount = 6 * (resolution / 2) * resolution + 1;
+
 int main(int argc, char* argv[])
 {
     // Initialize GLFW and OpenGL version
@@ -113,6 +119,7 @@ int main(int argc, char* argv[])
 
     GLuint initialCube = createCubeCoordinate();
     GLuint blueBigCube = createCubeCoordinate();
+    GLuint sphere = createSphere(resolution, 1);
 
     // Enable Backface culling and depth test
     glEnable(GL_CULL_FACE);
@@ -120,6 +127,8 @@ int main(int argc, char* argv[])
 
     Shader shader("shaders/textureShader.vs", "shaders/textureShader.fs");
     Shader depthShader("shaders/depthShader.vs", "shaders/depthShader.fs", "shaders/depthShader.gs");
+    Shader lightCubeShader("shaders/lightShader.vs", "shaders/lightShader.fs");
+
     buildingTextures[0] = loadTexture("rec/textures/building.png");
     buildingTextures[1] = loadTexture("rec/textures/buildingB.png");
     buildingTextures[2] = loadTexture("rec/textures/buildingC.png");
@@ -245,7 +254,6 @@ int main(int argc, char* argv[])
         shader.setInt("noShadows", noShadows); // enable/disable noShadows by pressing 'SPACE'
         shader.setFloat("far_plane", far_plane);
 
-        // TODO: change the texture as you want
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, backgroundTexture);
 
@@ -254,9 +262,9 @@ int main(int argc, char* argv[])
         glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubemap);
 
         drawScene(shader, initialCube, blueBigCube);
+        buildLightCube(lightCubeShader, sphere, lightPos);
 
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
         // End Frame
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -284,13 +292,11 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         camera.ProcessKeyboard(RIGHT, deltaTime);
 
-    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && !noShadowsKeyPressed)
-    {
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && !noShadowsKeyPressed) {
         noShadows = !noShadows;
         noShadowsKeyPressed = true;
     }
-    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_RELEASE)
-    {
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_RELEASE) {
         noShadowsKeyPressed = false;
     }
 
@@ -592,4 +598,22 @@ void buildShops(Shader &shader, GLuint initialCube) {
         glBindTexture(GL_TEXTURE_2D, shopTextures[i]);
         glDrawArrays(GL_TRIANGLES, 0, 36);
     }
+}
+
+void buildLightCube(Shader &shader, GLuint sphere, vec3 lightPos) {
+
+    glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+    glm::mat4 view = camera.GetViewMatrix();
+
+    shader.use();
+    shader.setMat4("projection", projection);
+    shader.setMat4("view", view);
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, lightPos);
+    model = glm::scale(model, glm::vec3(1.0f)); // a smaller cube
+    shader.setMat4("model", model);
+
+    glBindVertexArray(sphere);
+    glDrawElements(GL_TRIANGLES, vertexCount ,GL_UNSIGNED_INT,(void*)0);
 }
