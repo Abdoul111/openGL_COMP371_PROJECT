@@ -43,11 +43,14 @@ void buildShops(Shader &shader, GLuint initialCube);
 
 void buildLightCube(Shader &shader, GLuint sphere, vec3 lightPos);
 
+bool collisionDetection();
+
 const unsigned int SCR_WIDTH = 1024;
 const unsigned int SCR_HEIGHT = 768;
 bool noShadows = false;
 bool noShadowsKeyPressed = true;
-Camera camera(glm::vec3(10.0f, 4.0f, 0.0f));
+vec3 initialCameraPos = vec3(10.0f, 4.0f, 0.0f);
+Camera camera(initialCameraPos);
 float lastX = (float) SCR_WIDTH / 2.0f;
 float lastY = (float) SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -61,6 +64,17 @@ struct Location {
     float y;
     float z;
 };
+
+struct Wall {
+    float maxX;
+    float maxY;
+    float maxZ;
+    float minX;
+    float minY;
+    float minZ;
+};
+
+Wall bigWall = {125.0f, 70.0f, 125.0f, -125.0f, -1.0f, -125.0f};
 
 mat4 translateMatrix;
 mat4 rotateMatrix;
@@ -283,14 +297,39 @@ void drawScene(Shader shader, GLuint initialCube, GLuint blueBigCube) {
     buildShops(shader, initialCube);
 }
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera.ProcessKeyboard(FORWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera.ProcessKeyboard(BACKWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camera.ProcessKeyboard(LEFT, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camera.ProcessKeyboard(RIGHT, deltaTime);
+
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+        if ( collisionDetection()) {
+            camera.ProcessKeyboard(FORWARD, deltaTime);
+        } else {
+            camera.Position = initialCameraPos;
+        }
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+        if (collisionDetection()) {
+            camera.ProcessKeyboard(BACKWARD, deltaTime);
+        } else {
+            camera.Position = initialCameraPos;
+        }
+
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+        if (collisionDetection()) {
+            camera.ProcessKeyboard(LEFT, deltaTime);
+        } else {
+            camera.Position = initialCameraPos;
+        }
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+        if (collisionDetection()) {
+            camera.ProcessKeyboard(RIGHT, deltaTime);
+        } else {
+            camera.Position = initialCameraPos;
+        }
+    }
 
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && !noShadowsKeyPressed) {
         noShadows = !noShadows;
@@ -616,4 +655,8 @@ void buildLightCube(Shader &shader, GLuint sphere, vec3 lightPos) {
 
     glBindVertexArray(sphere);
     glDrawElements(GL_TRIANGLES, vertexCount ,GL_UNSIGNED_INT,(void*)0);
+}
+
+bool collisionDetection() {
+    return (camera.Position.y < bigWall.maxY && camera.Position.y > bigWall.minY)  &&  (camera.Position.x < bigWall.maxX && camera.Position.x > bigWall.minX)  &&  (camera.Position.z < bigWall.maxZ && camera.Position.z > bigWall.minZ);
 }
