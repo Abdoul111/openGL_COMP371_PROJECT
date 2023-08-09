@@ -32,13 +32,13 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 GLuint loadTexture(const char* filename);
-void drawScene(Shader shader, GLuint initialCube, GLuint blueBigCube);
+void drawScene(Shader shader, GLuint initialCube, GLuint blueBigCube, GLuint sphere);
 void buildBackground(Shader &shader, GLuint blueBigCube);
 void buildBuildingABCD(Shader &shader, GLuint initialCube);
 
 void buildScrapers(Shader &shader, GLuint initialCube);
 void buildTree(Shader &shader, GLuint initialCube);
-void buildStreetAndDecor(Shader &shader, GLuint initialCube);
+void buildStreetAndDecor(Shader &shader, GLuint initialCube, GLuint sphere);
 void buildShops(Shader &shader, GLuint initialCube);
 
 void buildLightCube(Shader &shader, GLuint sphere, vec3 lightPos);
@@ -74,7 +74,8 @@ struct Wall {
     float minZ;
 };
 
-Wall bigWall = {125.0f, 70.0f, 125.0f, -125.0f, -1.0f, -125.0f};
+Wall bigWall = {125.0f, 125.0f, 125.0f,
+                -125.0f, -1.0f, -125.0f};
 
 mat4 translateMatrix;
 mat4 rotateMatrix;
@@ -259,7 +260,7 @@ int main(int argc, char* argv[])
             depthShader.setMat4("shadowMatrices[" + std::to_string(i) + "]", shadowTransforms[i]);
         depthShader.setFloat("far_plane", far_plane);
         depthShader.setVec3("lightPos", lightPos);
-        drawScene(depthShader, initialCube, blueBigCube);
+        drawScene(depthShader, initialCube, blueBigCube, sphere);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         // 2. render scene as normal
@@ -335,7 +336,7 @@ int main(int argc, char* argv[])
         glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubemap);
 
-        drawScene(shader, initialCube, blueBigCube);
+        drawScene(shader, initialCube, blueBigCube, sphere);
         buildLightCube(lightCubeShader, sphere, lightPos);
 
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -348,12 +349,12 @@ int main(int argc, char* argv[])
 
     return 0;
 }
-void drawScene(Shader shader, GLuint initialCube, GLuint blueBigCube) {
+void drawScene(Shader shader, GLuint initialCube, GLuint blueBigCube, GLuint sphere) {
     buildBackground(shader, blueBigCube);
     buildBuildingABCD(shader, initialCube);
     buildScrapers(shader, initialCube);
     buildTree(shader, initialCube);
-    buildStreetAndDecor(shader, initialCube);
+    buildStreetAndDecor(shader, initialCube, sphere);
     buildShops(shader, initialCube);
 }
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
@@ -580,7 +581,7 @@ void buildTree(Shader &shader, GLuint initialCube) {
         glDrawArrays(GL_TRIANGLES, 0, 36);
     }
 }
-void buildStreetAndDecor(Shader &shader, GLuint initialCube) {
+void buildStreetAndDecor(Shader &shader, GLuint initialCube, GLuint sphere) {
     // this builds the street
     for (int i = 0; i < 2; i++) {
         translateMatrix = translate(mat4(1.0f), vec3(0.0f, -0.01f, -100.0f+i*200));
@@ -650,6 +651,18 @@ void buildStreetAndDecor(Shader &shader, GLuint initialCube) {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, balloonTextures[0]);
     glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    // testing drawing a sphere
+    //////////////// 1 //////////////
+    translateMatrix = translate(mat4(1.0f), vec3(0.0f, 50.0f, 20.0f));
+    scaleMatrix = scale(mat4(1.0f), vec3(15.0f, 5.0f, 15.0f));
+    modelMatrix = translateMatrix * scaleMatrix;
+    shader.setMat4("modelMatrix", modelMatrix);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, balloonTextures[0]);
+    glBindVertexArray(sphere);
+    glDrawElements(GL_TRIANGLES, vertexCount ,GL_UNSIGNED_INT,(void*)0);
+
     //this draws the blimp
     translateMatrix = translate(mat4(1.0f), vec3( yOffset, 100.0f, 0.0f));
     scaleMatrix = scale(mat4(1.0f), vec3(45.0f, 5.0f, 15.0f));
@@ -657,8 +670,9 @@ void buildStreetAndDecor(Shader &shader, GLuint initialCube) {
     shader.setMat4("modelMatrix", modelMatrix);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, balloonTextures[1]);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glDrawElements(GL_TRIANGLES, vertexCount ,GL_UNSIGNED_INT,(void*)0);
     // this draws the welcome sign
+    glBindVertexArray(initialCube);
     translateMatrix = translate(mat4(1.0f), vec3( -70.0f, 5.0, -90.0f));
     scaleMatrix = scale(mat4(1.0f), vec3(22.5f, 5.0f, 0.25f));
     modelMatrix = translateMatrix * scaleMatrix;
@@ -748,6 +762,5 @@ void buildLightCube(Shader &shader, GLuint sphere, vec3 lightPos) {
 }
 
 bool collisionDetection() {
-    return true;
-    //(camera.Position.y < bigWall.maxY && camera.Position.y > bigWall.minY)  &&  (camera.Position.x < bigWall.maxX && camera.Position.x > bigWall.minX)  &&  (camera.Position.z < bigWall.maxZ && camera.Position.z > bigWall.minZ);
+    return (camera.Position.y < bigWall.maxY && camera.Position.y > bigWall.minY)  &&  (camera.Position.x < bigWall.maxX && camera.Position.x > bigWall.minX)  &&  (camera.Position.z < bigWall.maxZ && camera.Position.z > bigWall.minZ);
 }
