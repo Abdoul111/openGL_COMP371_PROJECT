@@ -42,6 +42,7 @@ void buildScraper(Shader &shader, GLuint initialCube);
 void buildTree(Shader &shader, GLuint initialCube);
 void buildStreet(Shader &shader, GLuint initialCube);
 void buildStreetDecor(Shader &shader, GLuint initialCube);
+void buildShops(Shader &shader, GLuint initialCube);
 
 const unsigned int SCR_WIDTH = 1024;
 const unsigned int SCR_HEIGHT = 768;
@@ -98,7 +99,9 @@ unsigned int floorTexture;
 unsigned int scraperTextures[6];
 unsigned int firehydrantTexture;
 unsigned int stopTexture;
-
+unsigned int balloonTextures[2];
+unsigned int shopTextures[6];
+unsigned int welcomeTexture;
 int main(int argc, char* argv[])
 {
     // Initialize GLFW and OpenGL version
@@ -161,6 +164,14 @@ int main(int argc, char* argv[])
     scraperTextures[5] = loadTexture("rec/textures/scraper6.png");
     firehydrantTexture = loadTexture("rec/textures/firehydrant.png");
     stopTexture = loadTexture("rec/textures/stop.png");
+    shopTextures[0] = loadTexture("rec/textures/JC.png");
+    shopTextures[1] = loadTexture("rec/textures/MC.png");
+    shopTextures[2] = loadTexture("rec/textures/TH.png");
+    shopTextures[3] = loadTexture("rec/textures/SB.png");
+    balloonTextures[0] = loadTexture("rec/textures/balloon.png");
+    balloonTextures[1] = loadTexture("rec/textures/blimp.png");
+    welcomeTexture = loadTexture("rec/textures/welcome.png");
+
     const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
 
     unsigned int depthMapFBO;
@@ -305,6 +316,7 @@ void drawScene(Shader shader, GLuint initialCube, GLuint blueBigCube) {
     buildTree(shader, initialCube);
     buildStreet(shader, initialCube);
     buildStreetDecor(shader, initialCube);
+    buildShops(shader, initialCube);
 }
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
@@ -558,10 +570,9 @@ void buildStreetDecor(Shader &shader, GLuint initialCube) {
         scaleMatrix = scale(mat4(1.0f), vec3(5.0f, 4.0f, 5.0f));
         modelMatrix = translateMatrix * scaleMatrix;
         shader.setMat4("modelMatrix", modelMatrix);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, firehydrantTexture);
         glDrawArrays(GL_TRIANGLES, 0, 36);
     }
+    // this builds the stop signs
     for (int i = 0; i < 3; i++) {
         translateMatrix = translate(mat4(1.0f), vec3(-90.0f+i*99, 8.0f, -90.0f));
         scaleMatrix = scale(mat4(1.0f), vec3(0.5f, 8.0f, 5.0f));
@@ -576,6 +587,43 @@ void buildStreetDecor(Shader &shader, GLuint initialCube) {
         shader.setMat4("modelMatrix", modelMatrix);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, stopTexture);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+    //this draws the balloon
+    float time = glfwGetTime(); // Get the current time
+    float yOffset = cos(time) * 45.0f;
+    translateMatrix = translate(mat4(1.0f), vec3(90.0f, 90.0f + yOffset, 0.0f));
+    scaleMatrix = scale(mat4(1.0f), vec3(15.0f, 5.0f, 15.0f));
+    modelMatrix = translateMatrix * scaleMatrix;
+    shader.setMat4("modelMatrix", modelMatrix);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, balloonTextures[0]);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    translateMatrix = translate(mat4(1.0f), vec3( yOffset, 100.0f, 0.0f));
+    scaleMatrix = scale(mat4(1.0f), vec3(45.0f, 5.0f, 15.0f));
+    modelMatrix = translateMatrix * scaleMatrix;
+    shader.setMat4("modelMatrix", modelMatrix);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, balloonTextures[1]);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    // this draws the welcome sign
+    translateMatrix = translate(mat4(1.0f), vec3( 0.0f, 100.0f, 0.0f));
+    scaleMatrix = scale(mat4(1.0f), vec3(45.0f, 15.0f, 15.0f));
+    modelMatrix = translateMatrix * scaleMatrix;
+    shader.setMat4("modelMatrix", modelMatrix);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, welcomeTexture);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+}
+void buildShops(Shader &shader, GLuint initialCube) {
+    for (int i = 0; i < 4; i++) {
+        translateMatrix = translate(mat4(1.0f), vec3(-115.0f, 15.0f, 75.0f-i*50));
+        scaleMatrix = scale(mat4(1.0f), vec3(20.0f, 15.0f, 70.0f));
+        modelMatrix = translateMatrix * scaleMatrix;
+        shader.setMat4("modelMatrix", modelMatrix);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, shopTextures[i]);
         glDrawArrays(GL_TRIANGLES, 0, 36);
     }
 }
