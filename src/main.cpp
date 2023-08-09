@@ -1,9 +1,9 @@
 /*
  *
  * made by Abd Alwahed Haj Omar
- *      and Hisham Kitaz
+ *      and Hicham Kitaz
  * id: 40246177
- *
+ * id: 40188246
  * sources consulted for this quiz:
  * 1. chatGPT
  * 2. LearnOpenGL website and GitHub repository
@@ -30,18 +30,16 @@ using namespace glm;
 using namespace std;
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
-void resetCamera();
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 GLuint loadTexture(const char* filename);
 void drawScene(Shader shader, GLuint initialCube, GLuint blueBigCube);
 void buildBackground(Shader &shader, GLuint blueBigCube);
 void buildBuildingABCD(Shader &shader, GLuint initialCube);
-void buildBuildingCD(Shader &shader, GLuint initialCube);
-void buildScraper(Shader &shader, GLuint initialCube);
+
+void buildScrapers(Shader &shader, GLuint initialCube);
 void buildTree(Shader &shader, GLuint initialCube);
-void buildStreet(Shader &shader, GLuint initialCube);
-void buildStreetDecor(Shader &shader, GLuint initialCube);
+void buildStreetAndDecor(Shader &shader, GLuint initialCube);
 void buildShops(Shader &shader, GLuint initialCube);
 
 const unsigned int SCR_WIDTH = 1024;
@@ -67,41 +65,17 @@ mat4 translateMatrix;
 mat4 rotateMatrix;
 mat4 scaleMatrix;
 mat4 modelMatrix;
-
-mat4 translateMatrices[2];
-mat4 rotateMatrices[2];
-mat4 scaleMatrices[2];
-mat4 modelMatrices[2];
-
-mat4 armModelMatrix[2];
-mat4 armTranslate[2];
-mat4 armRotate[2]; // this is the global variable that controls all 4 rackets
-mat4 armScale[2];
-
 // this is to set the initial location of the rackets
 Location locations[2] = {{0.0f, 0.0f, 13.0f},
                          {0.0f, 0.0f, -13.0f},};
 
 
 
-// this variable will hold 0, 1, 2, 3 depending on the racket we have focus on. it also can have -1 if all rackets are selected
-int activeRacket = 0;
-
-
-// textures:
-unsigned int buildingTextures[4];
-unsigned int backgroundTexture;
-unsigned int treeTexture;
-unsigned int tree2Texture;
-unsigned int woodTexture;
-unsigned int streetTexture;
-unsigned int floorTexture;
-unsigned int scraperTextures[6];
-unsigned int firehydrantTexture;
-unsigned int stopTexture;
-unsigned int balloonTextures[2];
-unsigned int shopTextures[6];
-unsigned int welcomeTexture;
+// textures variables
+unsigned int buildingTextures[4];unsigned int balloonTextures[2];unsigned int shopTextures[6];unsigned int scraperTextures[6];
+unsigned int backgroundTexture;unsigned int treeTexture;unsigned int tree2Texture;unsigned int woodTexture;unsigned int streetTexture;
+unsigned int floorTexture;unsigned int firehydrantTexture;unsigned int stopTexture;unsigned int welcomeTexture;unsigned int heyTexture;
+unsigned int adventureTexture;unsigned int haveyouTexture;unsigned int visitTexture;
 int main(int argc, char* argv[])
 {
     // Initialize GLFW and OpenGL version
@@ -171,6 +145,10 @@ int main(int argc, char* argv[])
     balloonTextures[0] = loadTexture("rec/textures/balloon.png");
     balloonTextures[1] = loadTexture("rec/textures/blimp.png");
     welcomeTexture = loadTexture("rec/textures/welcome.png");
+    heyTexture = loadTexture("rec/textures/hey.png");
+    adventureTexture = loadTexture("rec/textures/adventure.png");
+    haveyouTexture = loadTexture("rec/textures/haveyou.png");
+    visitTexture = loadTexture("rec/textures/visit.png");
 
     const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
 
@@ -288,39 +266,15 @@ int main(int argc, char* argv[])
 
     return 0;
 }
-void buildBackground(Shader &shader, GLuint blueBigCube) {
-
-    glBindVertexArray(blueBigCube);// Big Blue Cube
-    translateMatrix = translate(mat4(1.0f), vec3(0.0f, 69.8f, 0.0f));
-    rotateMatrix = rotate(mat4(1.0f), radians(0.0f), vec3(0.0f, 0.0f, 1.0f));
-    scaleMatrix = scale(mat4(1.0f), vec3(500.0f, 70.0f, 500.0f));
-    modelMatrix = translateMatrix * rotateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-
-    //shader.setVec3("color", 129.0f/255, 174.0f/255, 208.0f/255);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, backgroundTexture);
-    glDisable(GL_CULL_FACE);
-    shader.setInt("reverse_normals", 1);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-    shader.setInt("reverse_normals", 0);
-    glEnable(GL_CULL_FACE);
-
-}
-
 void drawScene(Shader shader, GLuint initialCube, GLuint blueBigCube) {
     buildBackground(shader, blueBigCube);
     buildBuildingABCD(shader, initialCube);
-//    buildBuildingCD(shader, initialCube);
-    buildScraper(shader, initialCube);
+    buildScrapers(shader, initialCube);
     buildTree(shader, initialCube);
-    buildStreet(shader, initialCube);
-    buildStreetDecor(shader, initialCube);
+    buildStreetAndDecor(shader, initialCube);
     buildShops(shader, initialCube);
 }
-
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         camera.ProcessKeyboard(FORWARD, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
@@ -342,28 +296,7 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
 
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
-
 }
-
-void resetCamera() {
-    // Set the camera position to the active racket
-    camera.Position = vec3(locations[activeRacket].x, locations[activeRacket].y + 7.0f, locations[activeRacket].z);
-
-    // Calculate the direction vector from the camera position to the world center
-    vec3 directionToCenter = normalize(-camera.Position);
-
-    // Calculate yaw and pitch angles from the direction vector
-    float yaw = atan2(directionToCenter.x, -directionToCenter.z);
-    float pitch = asin(directionToCenter.y);
-
-    // Convert the angles from radians to degrees and set them in the camera
-    camera.Yaw = glm::degrees(yaw) - 90;
-    camera.Pitch = glm::degrees(pitch);
-
-    // Update the camera vectors to match the new orientation.
-    camera.updateCameraVectors();
-}
-
 // glfw: whenever the mouse moves, this callback is called
 // -------------------------------------------------------
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
@@ -391,22 +324,16 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
     camera.ProcessMouseScroll(static_cast<float>(yoffset));
 }
-
-
 GLuint loadTexture(const char* filename)
 {
     // Step1 Create and bind textures
     GLuint textureId = 0;
     glGenTextures(1, &textureId);
     assert(textureId != 0);
-
-
     glBindTexture(GL_TEXTURE_2D, textureId);
-
     // Step2 Set filter parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
     // Step3 Load Textures with dimension data
     int width, height, nrChannels;
     unsigned char* data = stbi_load(filename, &width, &height, &nrChannels, 0);
@@ -415,7 +342,6 @@ GLuint loadTexture(const char* filename)
         std::cerr << "Error::Texture could not load texture file:" << filename << std::endl;
         return 0;
     }
-
     // Step4 Upload the texture to the PU
     GLenum format = 0;
     if (nrChannels == 1)
@@ -426,15 +352,31 @@ GLuint loadTexture(const char* filename)
         format = GL_RGBA;
     glTexImage2D(GL_TEXTURE_2D, 0, format, width, height,
                  0, format, GL_UNSIGNED_BYTE, data);
-
     // Step5 Free resources
     stbi_image_free(data);
     glBindTexture(GL_TEXTURE_2D, 0);
     return textureId;
 }
+void buildBackground(Shader &shader, GLuint blueBigCube) {
 
+    glBindVertexArray(blueBigCube);// Big Blue Cube
+    translateMatrix = translate(mat4(1.0f), vec3(0.0f, 69.8f, 0.0f));
+    rotateMatrix = rotate(mat4(1.0f), radians(0.0f), vec3(0.0f, 0.0f, 1.0f));
+    scaleMatrix = scale(mat4(1.0f), vec3(500.0f, 70.0f, 500.0f));
+    modelMatrix = translateMatrix * rotateMatrix * scaleMatrix;
+    shader.setMat4("modelMatrix", modelMatrix);
+
+    //shader.setVec3("color", 129.0f/255, 174.0f/255, 208.0f/255);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, backgroundTexture);
+    glDisable(GL_CULL_FACE);
+    shader.setInt("reverse_normals", 1);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    shader.setInt("reverse_normals", 0);
+    glEnable(GL_CULL_FACE);
+
+}
 void buildBuildingABCD(Shader &shader, GLuint initialCube) {
-
     glBindVertexArray(initialCube);// CUBE BASE
     for(int i=0;i<10;i++) {
         //Builds BuildingA
@@ -457,11 +399,8 @@ void buildBuildingABCD(Shader &shader, GLuint initialCube) {
         glDrawArrays(GL_TRIANGLES, 0, 36);
     }
 }
-// this builds buildings CD
-
-
-//this builds the main building in the center
-void buildScraper(Shader &shader, GLuint initialCube) {
+//this builds the main buildings in the center
+void buildScrapers(Shader &shader, GLuint initialCube) {
     glBindVertexArray(initialCube);// CUBE BASE
     for(int i=0;i<3;i++) {
 
@@ -526,18 +465,17 @@ void buildTree(Shader &shader, GLuint initialCube) {
         glDrawArrays(GL_TRIANGLES, 0, 36);
     }
 }
-void buildStreet(Shader &shader, GLuint initialCube) {
-    glBindVertexArray(initialCube);// CUBE BASE
+void buildStreetAndDecor(Shader &shader, GLuint initialCube) {
     // this builds the street
     for (int i = 0; i < 2; i++) {
-    translateMatrix = translate(mat4(1.0f), vec3(0.0f, -0.01f, -100.0f+i*200));
-    scaleMatrix = scale(mat4(1.0f), vec3(25.0f, 0.0f, 500.0f));
-    rotateMatrix = rotate(mat4(1.0f), radians(90.0f), vec3(0.0f, 1.0f, 0.0f));
-    modelMatrix = translateMatrix * rotateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, streetTexture);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
+        translateMatrix = translate(mat4(1.0f), vec3(0.0f, -0.01f, -100.0f+i*200));
+        scaleMatrix = scale(mat4(1.0f), vec3(25.0f, 0.0f, 500.0f));
+        rotateMatrix = rotate(mat4(1.0f), radians(90.0f), vec3(0.0f, 1.0f, 0.0f));
+        modelMatrix = translateMatrix * rotateMatrix * scaleMatrix;
+        shader.setMat4("modelMatrix", modelMatrix);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, streetTexture);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
     }
     for(int i =0;i<3;i++) {
         translateMatrix = translate(mat4(1.0f), vec3(-100.0f*i+100, -0.01f, 0.0f));
@@ -547,9 +485,7 @@ void buildStreet(Shader &shader, GLuint initialCube) {
         shader.setMat4("modelMatrix", modelMatrix);
         glDrawArrays(GL_TRIANGLES, 0, 36);
     }
-}
-void buildStreetDecor(Shader &shader, GLuint initialCube) {
-    //this builds the floor
+    //this builds the flooring
     translateMatrix = translate(mat4(1.0f), vec3(0.0f, -0.09f, 0.0f));
     scaleMatrix = scale(mat4(1.0f), vec3(500.0f, 0.0f, 500.0f));
     modelMatrix = translateMatrix * scaleMatrix;
@@ -599,6 +535,7 @@ void buildStreetDecor(Shader &shader, GLuint initialCube) {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, balloonTextures[0]);
     glDrawArrays(GL_TRIANGLES, 0, 36);
+    //this draws the blimp
     translateMatrix = translate(mat4(1.0f), vec3( yOffset, 100.0f, 0.0f));
     scaleMatrix = scale(mat4(1.0f), vec3(45.0f, 5.0f, 15.0f));
     modelMatrix = translateMatrix * scaleMatrix;
@@ -607,14 +544,43 @@ void buildStreetDecor(Shader &shader, GLuint initialCube) {
     glBindTexture(GL_TEXTURE_2D, balloonTextures[1]);
     glDrawArrays(GL_TRIANGLES, 0, 36);
     // this draws the welcome sign
-    translateMatrix = translate(mat4(1.0f), vec3( 0.0f, 100.0f, 0.0f));
-    scaleMatrix = scale(mat4(1.0f), vec3(45.0f, 15.0f, 15.0f));
+    translateMatrix = translate(mat4(1.0f), vec3( -70.0f, 5.0, -90.0f));
+    scaleMatrix = scale(mat4(1.0f), vec3(22.5f, 5.0f, 0.25f));
     modelMatrix = translateMatrix * scaleMatrix;
     shader.setMat4("modelMatrix", modelMatrix);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, welcomeTexture);
     glDrawArrays(GL_TRIANGLES, 0, 36);
-
+    // this draws the adventure sign
+    translateMatrix = translate(mat4(1.0f), vec3( -124.9f, 100.0, 0.0f));
+    scaleMatrix = scale(mat4(1.0f), vec3(0.1f, 10.0f, 50.0f));
+    modelMatrix = translateMatrix * scaleMatrix;
+    shader.setMat4("modelMatrix", modelMatrix);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, visitTexture);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    // this draws the hey sign opposite to adventiure
+    translateMatrix = translate(mat4(1.0f), vec3( 124.9f, 100.0, 0.0f));
+    scaleMatrix = scale(mat4(1.0f), vec3(0.1f, 10.0f, 75.0f));
+    modelMatrix = translateMatrix * scaleMatrix;
+    shader.setMat4("modelMatrix", modelMatrix);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, haveyouTexture);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    translateMatrix = translate(mat4(1.0f), vec3(0.0f , 100.0, 124.9f));
+    scaleMatrix = scale(mat4(1.0f), vec3(50.0f, 10.0f, 0.1f));
+    modelMatrix = translateMatrix * scaleMatrix;
+    shader.setMat4("modelMatrix", modelMatrix);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, adventureTexture);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    translateMatrix = translate(mat4(1.0f), vec3(0.0f , 100.0, -124.9f));
+    scaleMatrix = scale(mat4(1.0f), vec3(50.0f, 10.0f, 0.1f));
+    modelMatrix = translateMatrix * scaleMatrix;
+    shader.setMat4("modelMatrix", modelMatrix);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, heyTexture);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
 }
 void buildShops(Shader &shader, GLuint initialCube) {
     for (int i = 0; i < 4; i++) {
