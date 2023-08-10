@@ -40,7 +40,7 @@ void buildScrapers(Shader &shader, GLuint initialCube);
 void buildTree(Shader &shader, GLuint initialCube);
 void buildStreetAndDecor(Shader &shader, GLuint initialCube, GLuint sphere);
 void buildShops(Shader &shader, GLuint initialCube);
-
+void buildFountain(Shader &shader, GLuint initialCube, GLuint sphere);
 void buildLightCube(Shader &shader, GLuint sphere, vec3 lightPos);
 
 bool collisionDetection();
@@ -87,7 +87,8 @@ Location locations[2] = {{0.0f, 0.0f, 13.0f},
 
 
 // textures variables
-unsigned int buildingTextures[4];unsigned int balloonTextures[2];unsigned int shopTextures[6];unsigned int scraperTextures[6];
+unsigned int buildingTextures[4];unsigned int balloonTextures[2];unsigned int shopTextures[8];unsigned int scraperTextures[6];
+unsigned int fountainTextures[3];
 unsigned int backgroundTexture;unsigned int treeTexture;unsigned int tree2Texture;unsigned int woodTexture;unsigned int streetTexture;
 unsigned int floorTexture;unsigned int firehydrantTexture;unsigned int stopTexture;unsigned int welcomeTexture;unsigned int heyTexture;
 unsigned int adventureTexture;unsigned int haveyouTexture;unsigned int visitTexture;
@@ -175,6 +176,10 @@ int main(int argc, char* argv[])
     shopTextures[1] = loadTexture("rec/textures/MC.png");
     shopTextures[2] = loadTexture("rec/textures/TH.png");
     shopTextures[3] = loadTexture("rec/textures/SB.png");
+    shopTextures[4] = loadTexture("rec/textures/FS.png");
+    shopTextures[5] = loadTexture("rec/textures/HQ.png");
+    shopTextures[6] = loadTexture("rec/textures/police.png");
+    shopTextures[7] = loadTexture("rec/textures/RBC.png");
     balloonTextures[0] = loadTexture("rec/textures/balloon.png");
     balloonTextures[1] = loadTexture("rec/textures/blimp.png");
     welcomeTexture = loadTexture("rec/textures/welcome.png");
@@ -182,6 +187,9 @@ int main(int argc, char* argv[])
     adventureTexture = loadTexture("rec/textures/adventure.png");
     haveyouTexture = loadTexture("rec/textures/haveyou.png");
     visitTexture = loadTexture("rec/textures/visit.png");
+    fountainTextures[0] = loadTexture("rec/textures/fountainbase.png");
+    fountainTextures[1] = loadTexture("rec/textures/fountaintop.png");
+    fountainTextures[2] = loadTexture("rec/textures/water.png");
 
     const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
 
@@ -356,6 +364,7 @@ void drawScene(Shader shader, GLuint initialCube, GLuint blueBigCube, GLuint sph
     buildTree(shader, initialCube);
     buildStreetAndDecor(shader, initialCube, sphere);
     buildShops(shader, initialCube);
+    buildFountain(shader, initialCube, sphere);
 }
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
 
@@ -655,7 +664,7 @@ void buildStreetAndDecor(Shader &shader, GLuint initialCube, GLuint sphere) {
     // testing drawing a sphere
     //////////////// 1 //////////////
     translateMatrix = translate(mat4(1.0f), vec3(0.0f, 50.0f, 20.0f));
-    scaleMatrix = scale(mat4(1.0f), vec3(15.0f, 5.0f, 15.0f));
+    scaleMatrix = scale(mat4(1.0f), vec3(20.0f, 5.0f, 20.0f));
     modelMatrix = translateMatrix * scaleMatrix;
     shader.setMat4("modelMatrix", modelMatrix);
     glActiveTexture(GL_TEXTURE0);
@@ -665,7 +674,7 @@ void buildStreetAndDecor(Shader &shader, GLuint initialCube, GLuint sphere) {
 
     //this draws the blimp
     translateMatrix = translate(mat4(1.0f), vec3( yOffset, 100.0f, 0.0f));
-    scaleMatrix = scale(mat4(1.0f), vec3(45.0f, 5.0f, 15.0f));
+    scaleMatrix = scale(mat4(1.0f), vec3(70.0f, 5.0f, 15.0f));
     modelMatrix = translateMatrix * scaleMatrix;
     shader.setMat4("modelMatrix", modelMatrix);
     glActiveTexture(GL_TEXTURE0);
@@ -673,6 +682,13 @@ void buildStreetAndDecor(Shader &shader, GLuint initialCube, GLuint sphere) {
     glDrawElements(GL_TRIANGLES, vertexCount ,GL_UNSIGNED_INT,(void*)0);
     // this draws the welcome sign
     glBindVertexArray(initialCube);
+    translateMatrix = translate(mat4(1.0f), vec3( yOffset-31, 100.0f, 0.0f));
+    scaleMatrix = scale(mat4(1.0f), vec3(50.0f, 2.0f, 0.1f));
+    modelMatrix = translateMatrix * scaleMatrix;
+    shader.setMat4("modelMatrix", modelMatrix);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, heyTexture);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
     translateMatrix = translate(mat4(1.0f), vec3( -70.0f, 5.0, -90.0f));
     scaleMatrix = scale(mat4(1.0f), vec3(22.5f, 5.0f, 0.25f));
     modelMatrix = translateMatrix * scaleMatrix;
@@ -721,8 +737,105 @@ void buildShops(Shader &shader, GLuint initialCube) {
         glBindTexture(GL_TEXTURE_2D, shopTextures[i]);
         glDrawArrays(GL_TRIANGLES, 0, 36);
     }
-}
+    for (int i = 0; i < 4; i++) {
+        translateMatrix = translate(mat4(1.0f), vec3(115.0f, 15.0f, 75.0f-i*50));scaleMatrix = scale(mat4(1.0f), vec3(20.0f, 15.0f, 70.0f));
+        modelMatrix = translateMatrix * scaleMatrix;
+        shader.setMat4("modelMatrix", modelMatrix);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, shopTextures[i+4]);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
 
+}
+void buildFountain(Shader &shader, GLuint initialCube, GLuint sphere) {
+    float time = glfwGetTime() * 5; // Get the current time
+    float xOffset = sin(time) * 0.3f;
+    float zOffset = cos(time) * 0.3f;
+    //bottom of the fountain
+    glBindVertexArray(initialCube);
+    translateMatrix = translate(mat4(1.0f), vec3(-50.0f, 2.0f, -50.0f));
+    scaleMatrix = scale(mat4(1.0f), vec3(27.0f, 2.0f, 27.0f));
+    modelMatrix = translateMatrix * scaleMatrix;
+    shader.setMat4("modelMatrix", modelMatrix);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, fountainTextures[0]);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    // animating water
+    glBindVertexArray(sphere);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, fountainTextures[2]);
+    translateMatrix = translate(mat4(1.0f), vec3(-49.75f - xOffset, 3.99f, -49.75f + zOffset));
+    scaleMatrix = scale(mat4(1.0f), vec3(23.0f, 0.1f, 23.0f));
+    modelMatrix = translateMatrix * scaleMatrix;
+    shader.setMat4("modelMatrix", modelMatrix);
+    glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, (void *) 0);
+    translateMatrix = translate(mat4(1.0f), vec3(-50.0f + zOffset, 3.99f, -50.0f - xOffset));
+    scaleMatrix = scale(mat4(1.0f), vec3(23.0f, 0.1f, 23.0f));
+    modelMatrix = translateMatrix * scaleMatrix;
+    shader.setMat4("modelMatrix", modelMatrix);
+    glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, (void *) 0);
+    translateMatrix = translate(mat4(1.0f), vec3(-50.25f - xOffset, 3.99f, -50.25f + zOffset));
+    scaleMatrix = scale(mat4(1.0f), vec3(23.0f, 0.1f, 23.0f));
+    modelMatrix = translateMatrix * scaleMatrix;
+    shader.setMat4("modelMatrix", modelMatrix);
+    glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, (void *) 0);
+    translateMatrix = translate(mat4(1.0f), vec3(-50.5f + zOffset, 3.99f, -50.5f - zOffset));
+    scaleMatrix = scale(mat4(1.0f), vec3(23.0f, 0.1f, 23.0f));
+    modelMatrix = translateMatrix * scaleMatrix;
+    shader.setMat4("modelMatrix", modelMatrix);
+    glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, (void *) 0);
+    translateMatrix = translate(mat4(1.0f), vec3(-50.f - xOffset, 3.99f, -50.0f + xOffset));
+    scaleMatrix = scale(mat4(1.0f), vec3(25.0f, 0.1f, 25.0f));
+    modelMatrix = translateMatrix * scaleMatrix;
+    shader.setMat4("modelMatrix", modelMatrix);
+    glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, (void *) 0);
+// top of the fountain
+    glBindVertexArray(initialCube);
+    translateMatrix = translate(mat4(1.0f), vec3(-50.0f, 9.0f, -50.0f));
+    scaleMatrix = scale(mat4(1.0f), vec3(5.0f, 5.0f, 5.0f));
+    modelMatrix = translateMatrix * scaleMatrix;
+    shader.setMat4("modelMatrix", modelMatrix);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, fountainTextures[1]);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    //animating water as squares
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, fountainTextures[2]);
+    translateMatrix = translate(mat4(1.0f), vec3(-50.0f , 3.998f, -50.0f ));
+    scaleMatrix = scale(mat4(1.0f), vec3(26.0f, 0.01f, 26.0f));
+    modelMatrix = translateMatrix * scaleMatrix;
+    shader.setMat4("modelMatrix", modelMatrix);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    translateMatrix = translate(mat4(1.0f), vec3(-50.5f + zOffset, 3.996f, -50.5f - zOffset));
+    scaleMatrix = scale(mat4(1.0f), vec3(23.0f, 0.01f, 23.0f));
+    modelMatrix = translateMatrix * scaleMatrix;
+    shader.setMat4("modelMatrix", modelMatrix);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    translateMatrix = translate(mat4(1.0f), vec3(-50.f - xOffset, 3.999f, -50.0f + xOffset));
+    scaleMatrix = scale(mat4(1.0f), vec3(25.0f, 0.01f, 25.0f));
+    modelMatrix = translateMatrix * scaleMatrix;
+    shader.setMat4("modelMatrix", modelMatrix);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    //fountain bricks
+    for (int i = 0; i < 2; i++) {
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, floorTexture);
+        translateMatrix = translate(mat4(1.0f), vec3(-50.0f, 3.999f, -43.35f -i* 13.3));
+        scaleMatrix = scale(mat4(1.0f), vec3(27.0f, 0.25f, 2.0f));
+        modelMatrix = translateMatrix * scaleMatrix;
+        shader.setMat4("modelMatrix", modelMatrix);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+    for (int i = 0; i < 2; i++) {
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, floorTexture);
+        translateMatrix = translate(mat4(1.0f), vec3(-43.35f -i* 13.3, 3.999f,-50.0f));
+        scaleMatrix = scale(mat4(1.0f), vec3(2.0f, 0.25f, 27.0f));
+        modelMatrix = translateMatrix * scaleMatrix;
+        shader.setMat4("modelMatrix", modelMatrix);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+}
 void buildLightCube(Shader &shader, GLuint sphere, vec3 lightPos) {
 
     glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 1000.0f);

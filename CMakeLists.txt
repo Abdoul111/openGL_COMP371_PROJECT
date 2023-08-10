@@ -22,7 +22,7 @@ set(EXEC main)
 
 file(GLOB SRC src/*.cpp)
 
-add_executable(${EXEC} ${SRC} src/lib/Camera.h src/lib/shader.h src/lib/shader_m.h src/lib/stb_image.h src/vao.cpp src/vao.h)
+add_executable(${EXEC} ${SRC} src/lib/Camera.h src/lib/shader.h  src/lib/stb_image.h src/vao.cpp src/vao.h)
 
 target_link_libraries(${EXEC} OpenGL::GL glew_s glfw glm)
 
