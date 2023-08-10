@@ -42,6 +42,7 @@ void buildStreetAndDecor(Shader &shader, GLuint initialCube, GLuint sphere);
 void buildShops(Shader &shader, GLuint initialCube);
 void buildFountain(Shader &shader, GLuint initialCube, GLuint sphere);
 void buildLightCube(Shader &shader, GLuint sphere, vec3 lightPos);
+void buildPeople(Shader &shader, GLuint initialCube);
 
 bool collisionDetection();
 
@@ -88,10 +89,10 @@ Location locations[2] = {{0.0f, 0.0f, 13.0f},
 
 // textures variables
 unsigned int buildingTextures[4];unsigned int balloonTextures[2];unsigned int shopTextures[8];unsigned int scraperTextures[6];
-unsigned int fountainTextures[3];
+unsigned int fountainTextures[3];unsigned int peopleTextures[8];
 unsigned int backgroundTexture;unsigned int treeTexture;unsigned int tree2Texture;unsigned int woodTexture;unsigned int streetTexture;
 unsigned int floorTexture;unsigned int firehydrantTexture;unsigned int stopTexture;unsigned int welcomeTexture;unsigned int heyTexture;
-unsigned int adventureTexture;unsigned int haveyouTexture;unsigned int visitTexture;
+unsigned int adventureTexture;unsigned int haveyouTexture;unsigned int visitTexture;unsigned int antennaTexture;
 
 // light sphere constants:
 // light sphere
@@ -154,42 +155,33 @@ int main(int argc, char* argv[])
     Shader depthShader("shaders/depthShader.vs", "shaders/depthShader.fs", "shaders/depthShader.gs");
     Shader lightCubeShader("shaders/lightShader.vs", "shaders/lightShader.fs");
 
-    buildingTextures[0] = loadTexture("rec/textures/building.png");
-    buildingTextures[1] = loadTexture("rec/textures/buildingB.png");
-    buildingTextures[2] = loadTexture("rec/textures/buildingC.png");
-    buildingTextures[3] = loadTexture("rec/textures/buildingD.png");
+    buildingTextures[0] = loadTexture("rec/textures/building.png");buildingTextures[1] = loadTexture("rec/textures/buildingB.png");
+    buildingTextures[2] = loadTexture("rec/textures/buildingC.png");buildingTextures[3] = loadTexture("rec/textures/buildingD.png");
     backgroundTexture = loadTexture("rec/textures/background.png");
-    treeTexture = loadTexture("rec/textures/tree.png");
-    tree2Texture = loadTexture("rec/textures/tree2.png");
+    treeTexture = loadTexture("rec/textures/tree.png");tree2Texture = loadTexture("rec/textures/tree2.png");
     woodTexture = loadTexture("rec/textures/wood.png");
     streetTexture = loadTexture("rec/textures/street.png");
     floorTexture = loadTexture("rec/textures/brick.jpg");
-    scraperTextures[0] = loadTexture("rec/textures/scraper.png");
-    scraperTextures[1] = loadTexture("rec/textures/scraper2.png");
-    scraperTextures[2] = loadTexture("rec/textures/scraper3.png");
-    scraperTextures[3] = loadTexture("rec/textures/scraper4.png");
-    scraperTextures[4] = loadTexture("rec/textures/scraper5.png");
-    scraperTextures[5] = loadTexture("rec/textures/scraper6.png");
+    scraperTextures[0] = loadTexture("rec/textures/scraper.png");scraperTextures[1] = loadTexture("rec/textures/scraper2.png");
+    scraperTextures[2] = loadTexture("rec/textures/scraper3.png");scraperTextures[3] = loadTexture("rec/textures/scraper4.png");
+    scraperTextures[4] = loadTexture("rec/textures/scraper5.png");scraperTextures[5] = loadTexture("rec/textures/scraper6.png");
     firehydrantTexture = loadTexture("rec/textures/firehydrant.png");
     stopTexture = loadTexture("rec/textures/stop.png");
-    shopTextures[0] = loadTexture("rec/textures/JC.png");
-    shopTextures[1] = loadTexture("rec/textures/MC.png");
-    shopTextures[2] = loadTexture("rec/textures/TH.png");
-    shopTextures[3] = loadTexture("rec/textures/SB.png");
-    shopTextures[4] = loadTexture("rec/textures/FS.png");
-    shopTextures[5] = loadTexture("rec/textures/HQ.png");
-    shopTextures[6] = loadTexture("rec/textures/police.png");
-    shopTextures[7] = loadTexture("rec/textures/RBC.png");
-    balloonTextures[0] = loadTexture("rec/textures/balloon.png");
-    balloonTextures[1] = loadTexture("rec/textures/blimp.png");
+    shopTextures[0] = loadTexture("rec/textures/JC.png");shopTextures[1] = loadTexture("rec/textures/MC.png");
+    shopTextures[2] = loadTexture("rec/textures/TH.png");shopTextures[3] = loadTexture("rec/textures/SB.png");
+    shopTextures[4] = loadTexture("rec/textures/FS.png");shopTextures[5] = loadTexture("rec/textures/HQ.png");
+    shopTextures[6] = loadTexture("rec/textures/police.png");shopTextures[7] = loadTexture("rec/textures/RBC.png");
+    balloonTextures[0] = loadTexture("rec/textures/balloon.png");balloonTextures[1] = loadTexture("rec/textures/blimp.png");
     welcomeTexture = loadTexture("rec/textures/welcome.png");
-    heyTexture = loadTexture("rec/textures/hey.png");
-    adventureTexture = loadTexture("rec/textures/adventure.png");
-    haveyouTexture = loadTexture("rec/textures/haveyou.png");
-    visitTexture = loadTexture("rec/textures/visit.png");
-    fountainTextures[0] = loadTexture("rec/textures/fountainbase.png");
-    fountainTextures[1] = loadTexture("rec/textures/fountaintop.png");
+    heyTexture = loadTexture("rec/textures/hey.png");adventureTexture = loadTexture("rec/textures/adventure.png");
+    haveyouTexture = loadTexture("rec/textures/haveyou.png");visitTexture = loadTexture("rec/textures/visit.png");
+    fountainTextures[0] = loadTexture("rec/textures/fountainbase.png");fountainTextures[1] = loadTexture("rec/textures/fountaintop.png");
     fountainTextures[2] = loadTexture("rec/textures/water.png");
+    antennaTexture = loadTexture("rec/textures/antenna.png");
+    peopleTextures[0] = loadTexture("rec/textures/cashier.png");peopleTextures[1] = loadTexture("rec/textures/mcworker.png");
+    peopleTextures[2] = loadTexture("rec/textures/timemployee.png");peopleTextures[3] = loadTexture("rec/textures/SBemployee.png");
+    peopleTextures[4] = loadTexture("rec/textures/fireman.png"); peopleTextures[5] = loadTexture("rec/textures/electrician.png");
+    peopleTextures[6] = loadTexture("rec/textures/officer.png");peopleTextures[7] = loadTexture("rec/textures/banker.png");
 
     const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
 
@@ -365,9 +357,9 @@ void drawScene(Shader shader, GLuint initialCube, GLuint blueBigCube, GLuint sph
     buildStreetAndDecor(shader, initialCube, sphere);
     buildShops(shader, initialCube);
     buildFountain(shader, initialCube, sphere);
+    buildPeople(shader, initialCube);
 }
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
         if ( collisionDetection()) {
             camera.ProcessKeyboard(FORWARD, deltaTime);
@@ -375,7 +367,6 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
             camera.Position = initialCameraPos;
         }
     }
-
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
         if (collisionDetection()) {
             camera.ProcessKeyboard(BACKWARD, deltaTime);
@@ -384,7 +375,6 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         }
 
     }
-
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
         if (collisionDetection()) {
             camera.ProcessKeyboard(LEFT, deltaTime);
@@ -392,7 +382,6 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
             camera.Position = initialCameraPos;
         }
     }
-
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
         if (collisionDetection()) {
             camera.ProcessKeyboard(RIGHT, deltaTime);
@@ -400,14 +389,12 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
             camera.Position = initialCameraPos;
         }
     }
-
     if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS && !noShadowsKeyPressed) {
         isNight = !isNight;
     }
     if (glfwGetKey(window, GLFW_KEY_M) == GLFW_RELEASE) {
         isSpotLightOn = !isSpotLightOn;
     }
-
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && !noShadowsKeyPressed) {
         noShadows = !noShadows;
         noShadowsKeyPressed = true;
@@ -415,7 +402,6 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_RELEASE) {
         noShadowsKeyPressed = false;
     }
-
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 }
@@ -430,16 +416,12 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
         lastY = ypos;
         firstMouse = false;
     }
-
     float xoffset = xpos - lastX;
     float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
-
     lastX = xpos;
     lastY = ypos;
-
     camera.ProcessMouseMovement(xoffset, yoffset);
 }
-
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called
 // ----------------------------------------------------------------------
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
@@ -480,14 +462,12 @@ GLuint loadTexture(const char* filename)
     return textureId;
 }
 void buildBackground(Shader &shader, GLuint blueBigCube) {
-
     glBindVertexArray(blueBigCube);// Big Blue Cube
     translateMatrix = translate(mat4(1.0f), vec3(0.0f, 69.8f, 0.0f));
     rotateMatrix = rotate(mat4(1.0f), radians(0.0f), vec3(0.0f, 0.0f, 1.0f));
     scaleMatrix = scale(mat4(1.0f), vec3(500.0f, 70.0f, 500.0f));
     modelMatrix = translateMatrix * rotateMatrix * scaleMatrix;
     shader.setMat4("modelMatrix", modelMatrix);
-
     //shader.setVec3("color", 129.0f/255, 174.0f/255, 208.0f/255);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, backgroundTexture);
@@ -514,7 +494,6 @@ void buildBuildingABCD(Shader &shader, GLuint initialCube) {
         glBindTexture(GL_TEXTURE_2D, buildingTextures[textureIndex]);
         glDrawArrays(GL_TRIANGLES, 0, 36);
         //Builds BuildingA other side
-
         translateMatrix = translate(mat4(1.0f), vec3(-115.0f+i*25, 20.0f, 115.0f));
         scaleMatrix = scale(mat4(1.0f), vec3(25.0f, 20.0f, 25.0f));
         modelMatrix = translateMatrix * scaleMatrix;
@@ -522,6 +501,22 @@ void buildBuildingABCD(Shader &shader, GLuint initialCube) {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, buildingTextures[textureIndex]);
         glDrawArrays(GL_TRIANGLES, 0, 36);
+        //building antennas
+        translateMatrix = translate(mat4(1.0f), vec3(-115.0f+i*25, 43.0f, 109.0f));
+        scaleMatrix = scale(mat4(1.0f), vec3(10.0f, 4.0f, 0.1f));
+        modelMatrix = translateMatrix * scaleMatrix;
+        shader.setMat4("modelMatrix", modelMatrix);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, antennaTexture);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        translateMatrix = translate(mat4(1.0f), vec3(-115.0f+i*25, 43.0f, -109.0f));
+        scaleMatrix = scale(mat4(1.0f), vec3(10.0f, 4.0f, 0.1f));
+        modelMatrix = translateMatrix * scaleMatrix;
+        shader.setMat4("modelMatrix", modelMatrix);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, antennaTexture);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
     }
 }
 //this builds the main buildings in the center
@@ -789,15 +784,7 @@ void buildFountain(Shader &shader, GLuint initialCube, GLuint sphere) {
     modelMatrix = translateMatrix * scaleMatrix;
     shader.setMat4("modelMatrix", modelMatrix);
     glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, (void *) 0);
-// top of the fountain
     glBindVertexArray(initialCube);
-    translateMatrix = translate(mat4(1.0f), vec3(-50.0f, 9.0f, -50.0f));
-    scaleMatrix = scale(mat4(1.0f), vec3(5.0f, 5.0f, 5.0f));
-    modelMatrix = translateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, fountainTextures[1]);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
     //animating water as squares
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, fountainTextures[2]);
@@ -833,6 +820,21 @@ void buildFountain(Shader &shader, GLuint initialCube, GLuint sphere) {
         scaleMatrix = scale(mat4(1.0f), vec3(2.0f, 0.25f, 27.0f));
         modelMatrix = translateMatrix * scaleMatrix;
         shader.setMat4("modelMatrix", modelMatrix);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+}
+void buildPeople(Shader &shader, GLuint initialCube){
+    glBindVertexArray(initialCube);
+    for (int i = 0; i < 4; i++) {
+        translateMatrix = translate(mat4(1.0f), vec3(-108.0f, 10.0f, 85.0f-i*50));scaleMatrix = scaleMatrix = scale(mat4(1.0f), vec3(0.1f, 8.0f, 20.0f));
+        modelMatrix = translateMatrix * scaleMatrix;shader.setMat4("modelMatrix", modelMatrix);
+        glActiveTexture(GL_TEXTURE0);glBindTexture(GL_TEXTURE_2D, peopleTextures[i]);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+    for (int i = 0; i < 4; i++) {
+        translateMatrix = translate(mat4(1.0f), vec3(108.0f, 10.0f, 65.0f-i*50));scaleMatrix = scale(mat4(1.0f), vec3(0.1f, 8.0f, 20.0f));
+        modelMatrix = translateMatrix * scaleMatrix;shader.setMat4("modelMatrix", modelMatrix);
+        glActiveTexture(GL_TEXTURE0);glBindTexture(GL_TEXTURE_2D, peopleTextures[i+4]);
         glDrawArrays(GL_TRIANGLES, 0, 36);
     }
 }
