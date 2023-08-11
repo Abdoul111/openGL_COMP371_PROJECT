@@ -324,24 +324,42 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         }
     }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        if (collisionDetection()) {
-            camera.ProcessKeyboard(BACKWARD, deltaTime);
-        } else {
-            camera.Position = initialCameraPos;
+        camera.ProcessKeyboard(BACKWARD, deltaTime);
+        if (!cameraInsideCurrentSquare()) {
+            Location newCurrentLocation = newSquareLocation(camera.Position);
+            currentSquareLocation = newCurrentLocation;
+            cout << "camera position: " << camera.Position.x << ", " << camera.Position.z << endl;
+            cout << "new square location: " << currentSquareLocation.x << ", " << currentSquareLocation.z << endl;
+
+            // now we need to add the new locations to the vector so that they get drawn when we pass
+            // to the while loop again.
+            addNewLocations();
         }
     }
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        if (collisionDetection()) {
-            camera.ProcessKeyboard(LEFT, deltaTime);
-        } else {
-            camera.Position = initialCameraPos;
+        camera.ProcessKeyboard(LEFT, deltaTime);
+        if (!cameraInsideCurrentSquare()) {
+            Location newCurrentLocation = newSquareLocation(camera.Position);
+            currentSquareLocation = newCurrentLocation;
+            cout << "camera position: " << camera.Position.x << ", " << camera.Position.z << endl;
+            cout << "new square location: " << currentSquareLocation.x << ", " << currentSquareLocation.z << endl;
+
+            // now we need to add the new locations to the vector so that they get drawn when we pass
+            // to the while loop again.
+            addNewLocations();
         }
     }
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        if (collisionDetection()) {
-            camera.ProcessKeyboard(RIGHT, deltaTime);
-        } else {
-            camera.Position = initialCameraPos;
+        camera.ProcessKeyboard(RIGHT, deltaTime);
+        if (!cameraInsideCurrentSquare()) {
+            Location newCurrentLocation = newSquareLocation(camera.Position);
+            currentSquareLocation = newCurrentLocation;
+            cout << "camera position: " << camera.Position.x << ", " << camera.Position.z << endl;
+            cout << "new square location: " << currentSquareLocation.x << ", " << currentSquareLocation.z << endl;
+
+            // now we need to add the new locations to the vector so that they get drawn when we pass
+            // to the while loop again.
+            addNewLocations();
         }
     }
     if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS && !noShadowsKeyPressed) {
