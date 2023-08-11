@@ -9,7 +9,9 @@
  * 2. LearnOpenGL website and GitHub repository
  */
 
+
 #include <iostream>
+#include <vector>
 
 #define GLEW_STATIC 1
 #include <GL/glew.h>
@@ -20,96 +22,70 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "lib/stb_image.h"
 #include "lib/Camera.h"
 #include "lib/shader.h"
 #include "vao.h"
+#include "Backend.h"
 
 using namespace glm;
 using namespace std;
 
-void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
-void mouse_callback(GLFWwindow* window, double xpos, double ypos);
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
-GLuint loadTexture(const char* filename);
-void drawScene(Shader shader, GLuint initialCube, GLuint blueBigCube, GLuint sphere);
-void buildBackground(Shader &shader, GLuint blueBigCube);
-void buildBuildingABCD(Shader &shader, GLuint initialCube);
-
-void buildScrapers(Shader &shader, GLuint initialCube);
-void buildTree(Shader &shader, GLuint initialCube);
-void buildStreetAndDecor(Shader &shader, GLuint initialCube, GLuint sphere);
-void buildShops(Shader &shader, GLuint initialCube);
-void buildFountain(Shader &shader, GLuint initialCube, GLuint sphere);
-void buildLightCube(Shader &shader, GLuint sphere, vec3 lightPos);
-void buildPeople(Shader &shader, GLuint initialCube);
-
-bool collisionDetection();
-
-const unsigned int SCR_WIDTH = 1024;
-const unsigned int SCR_HEIGHT = 768;
-bool noShadows = false;
-bool noShadowsKeyPressed = true;
-vec3 initialCameraPos = vec3(10.0f, 4.0f, 0.0f);
-Camera camera(initialCameraPos);
-float lastX = (float) SCR_WIDTH / 2.0f;
-float lastY = (float) SCR_HEIGHT / 2.0f;
-bool firstMouse = true;
-
-// timing
-float deltaTime = 0.0f;
-float lastFrame = 0.0f;
 
 struct Location {
-    float x;
-    float y;
-    float z;
+    float x = 0.0f;
+    float z = 0.0f;
+    bool rightSquare = false;
+    bool leftSquare = false;
+    bool upSquare = false;
+    bool downSquare = false;
 };
 
-struct Wall {
-    float maxX;
-    float maxY;
-    float maxZ;
-    float minX;
-    float minY;
-    float minZ;
-};
+void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+void drawScene(Shader shader, GLuint initialCube, GLuint blueBigCube, GLuint sphere);
+Location newSquareLocation(vec3 cameraPosition);
+void addNewLocations();
 
-Wall bigWall = {125.0f, 125.0f, 125.0f,
-                -125.0f, -1.0f, -125.0f};
+extern const unsigned int SCR_WIDTH = 1024;
+extern const unsigned int SCR_HEIGHT = 768;
+extern bool noShadows;
+extern bool noShadowsKeyPressed;
 
-mat4 translateMatrix;
-mat4 rotateMatrix;
-mat4 scaleMatrix;
-mat4 modelMatrix;
-// this is to set the initial location of the rackets
-Location locations[2] = {{0.0f, 0.0f, 13.0f},
-                         {0.0f, 0.0f, -13.0f},};
+extern vec3 initialCameraPos;
+extern Camera camera;
+extern vec3 lightPos;
+extern float lastX;
+extern float lastY;
+extern bool firstMouse;
 
-
-// textures variables
-unsigned int buildingTextures[4];unsigned int balloonTextures[2];unsigned int shopTextures[8];unsigned int scraperTextures[6];
-unsigned int fountainTextures[3];unsigned int peopleTextures[8];
-unsigned int backgroundTexture;unsigned int treesTexture[2];unsigned int woodTexture;unsigned int streetTexture;
-unsigned int floorTexture;unsigned int firehydrantTexture;unsigned int stopTexture;
-unsigned int signsTexture[5];unsigned int antennaTexture;
-
+extern float near_plane;
+// change the max distance of light
+extern float far_plane;
 // light sphere constants:
 // light sphere
-int resolution = 65;
-int vertexCount = 6 * (resolution / 2) * resolution + 1;
+extern int resolution;
+extern int vertexCount;
+
+extern float deltaTime;
+extern float lastFrame;
 
 // positions of the point lights
-glm::vec3 pointLightPositions[] = {
-        glm::vec3( 0.0f,  5.0f,  50.0f),
-        glm::vec3( 0.0f, 5.0f, -50.0f)
-};
+extern vec3 pointLightPositions[];
 
-bool isNight = false;
-bool isSpotLightOn = false;
+extern bool isNight;
+extern bool isSpotLightOn;
 
-int main(int argc, char* argv[])
-{
+
+Location squareLocation = {0.0f, 0.0f, true, true, true, true};
+Location squareLocation2 = {50.0f, 0.0f, true, false, false, false};
+Location squareLocation3 = {-50.0f, 0.0f, false, true, false, false};
+Location squareLocation4 = {0.0f, 50.0f, false, false, true, false};
+Location squareLocation5 = {0.0f, -50.0f, false, false, false, true};
+
+Location currentSquareLocation = squareLocation;
+
+vector<Location> squareLocations;
+
+int main() {
     // Initialize GLFW and OpenGL version
     glfwInit();
 
@@ -136,12 +112,64 @@ int main(int argc, char* argv[])
         return -1;
     }
 
+
+    // adding the default squares
+    squareLocations.push_back(squareLocation);
+    squareLocations.push_back(squareLocation2);
+    squareLocations.push_back(squareLocation3);
+    squareLocations.push_back(squareLocation4);
+    squareLocations.push_back(squareLocation5);
+
+    // whenever we add a square, we check if it has neighboring squares, (obviously, it should have at least 1)
+    // this will be done later when we add squares dynamically
+
+    // 20
+    // 15 + constant -> 0 - 10, (15, 25)
+
+
+    // square                   15*15
+    // (0,0) 7.5
+    // LEFT -> 1 unit to the left, then updates the position coordinates -> (1,0),
+    // then checks if this new position is still inside the square
+    // LEFT, LEFT, LEFT, LEFT, LEFT, LEFT, LEFT, LEFT(8, 0) = 8 LEFT
+    // then we are in the left square
+    // I have the center of current square, then I can easily get the center of the new square
+    // (0,0) -> (15, 0)
+    // and we have the current position (8, 0)
+    // then currentSquare = newSquare
+    // generateNearbySquares() ->
+    // whenever we create a new square, we store its neighbors squares in a list
+    // then I know what are the missing squares around me
+    // then I generate what is missing
+
+
+    // random1 : specifies the type (building, shop, facilities, etc)
+
+
+    // square be a square
+    //if (building) -> random2 : number buildings (1, 2)
+    //              -> random3 : specifies the height of the building (base= 10 unites + (5 to 10))
+    //              -> random4 : specifies the number of trees around the building (0 to 5)
+    //              -> random5 : specifies the texture of the building (6 choices)
+
+    // else if (shop) -> random2 : specifies the texture of the shop (8 choices)
+    //               -> random3 : specifies the height of the shop (base= 5 unites + (1 to 5 unites))
+
+
+    // to ensure that the player cannot enter inside objects, we can save the boundaries of
+    // the 4 elements inside the square in a list and then save those in a list of boundaries.
+    // then for each move from the play, for each boundary, we check for each side if the player
+    // have moved into an object. If yes, then we don't let the camera move in this direction and move it back
+    // from where it moved
+
+    // if building 1 is 50x50, then building 2 is 50x50, and in between we have 4 unites, then let square be 110x110.
+
     // Set the keyboard key and mouse callback functions
     glfwSetKeyCallback(window, keyCallback);
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
 
-    glClearColor(0.0f/255, 18.0f/255, 43.0f/255, 1.0f);
+    glClearColor(30.0f/255, 48.0f/255, 143.0f/255, 1.0f);
 
     GLuint initialCube = createCubeCoordinate();
     GLuint blueBigCube = createCubeCoordinate();
@@ -155,33 +183,7 @@ int main(int argc, char* argv[])
     Shader depthShader("shaders/depthShader.vs", "shaders/depthShader.fs", "shaders/depthShader.gs");
     Shader lightCubeShader("shaders/lightShader.vs", "shaders/lightShader.fs");
 
-    buildingTextures[0] = loadTexture("rec/textures/building.png");buildingTextures[1] = loadTexture("rec/textures/buildingB.png");
-    buildingTextures[2] = loadTexture("rec/textures/buildingC.png");buildingTextures[3] = loadTexture("rec/textures/buildingD.png");
-    backgroundTexture = loadTexture("rec/textures/background.png");
-    treesTexture[0] = loadTexture("rec/textures/tree.png");treesTexture[1] = loadTexture("rec/textures/tree2.png");
-    woodTexture = loadTexture("rec/textures/wood.png");
-    streetTexture = loadTexture("rec/textures/street.png");
-    floorTexture = loadTexture("rec/textures/brick.jpg");
-    scraperTextures[0] = loadTexture("rec/textures/scraper.png");scraperTextures[1] = loadTexture("rec/textures/scraper2.png");
-    scraperTextures[2] = loadTexture("rec/textures/scraper3.png");scraperTextures[3] = loadTexture("rec/textures/scraper4.png");
-    scraperTextures[4] = loadTexture("rec/textures/scraper5.png");scraperTextures[5] = loadTexture("rec/textures/scraper6.png");
-    firehydrantTexture = loadTexture("rec/textures/firehydrant.png");
-    stopTexture = loadTexture("rec/textures/stop.png");
-    shopTextures[0] = loadTexture("rec/textures/JC.png");shopTextures[1] = loadTexture("rec/textures/MC.png");
-    shopTextures[2] = loadTexture("rec/textures/TH.png");shopTextures[3] = loadTexture("rec/textures/SB.png");
-    shopTextures[4] = loadTexture("rec/textures/FS.png");shopTextures[5] = loadTexture("rec/textures/HQ.png");
-    shopTextures[6] = loadTexture("rec/textures/police.png");shopTextures[7] = loadTexture("rec/textures/RBC.png");
-    balloonTextures[0] = loadTexture("rec/textures/balloon.png");balloonTextures[1] = loadTexture("rec/textures/blimp.png");
-    signsTexture[0] = loadTexture("rec/textures/hey.png");signsTexture[1] = loadTexture("rec/textures/adventure.png");
-    signsTexture[2] = loadTexture("rec/textures/haveyou.png");signsTexture[3] = loadTexture("rec/textures/visit.png");
-    signsTexture[4] = loadTexture("rec/textures/welcome.png");
-    fountainTextures[0] = loadTexture("rec/textures/fountainbase.png");fountainTextures[1] = loadTexture("rec/textures/fountaintop.png");
-    fountainTextures[2] = loadTexture("rec/textures/water.png");
-    antennaTexture = loadTexture("rec/textures/antenna.png");
-    peopleTextures[0] = loadTexture("rec/textures/cashier.png");peopleTextures[1] = loadTexture("rec/textures/mcworker.png");
-    peopleTextures[2] = loadTexture("rec/textures/timemployee.png");peopleTextures[3] = loadTexture("rec/textures/SBemployee.png");
-    peopleTextures[4] = loadTexture("rec/textures/fireman.png"); peopleTextures[5] = loadTexture("rec/textures/electrician.png");
-    peopleTextures[6] = loadTexture("rec/textures/officer.png");peopleTextures[7] = loadTexture("rec/textures/banker.png");
+    unsigned int defaultTexture = buildTextures();
 
     const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
 
@@ -216,7 +218,7 @@ int main(int argc, char* argv[])
 
     // lighting info
     // -------------
-    glm::vec3 lightPos(0.0f, 6.0f, 0.0f);
+
 
 
     while (!glfwWindowShouldClose(window)) {
@@ -229,14 +231,11 @@ int main(int argc, char* argv[])
 
         // render
         // ------
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        glClearColor(30.0f/255, 48.0f/255, 143.0f/255, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // 0. create depth cubemap transformation matrices
         // -----------------------------------------------
-        float near_plane = 1.0f;
-        // change the max distance of light
-        float far_plane  = 500.0f;
         glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), (float)SHADOW_WIDTH / (float)SHADOW_HEIGHT, near_plane, far_plane);
 
         std::vector<glm::mat4> shadowTransforms;
@@ -260,7 +259,8 @@ int main(int argc, char* argv[])
             depthShader.setMat4("shadowMatrices[" + std::to_string(i) + "]", shadowTransforms[i]);
         depthShader.setFloat("far_plane", far_plane);
         depthShader.setVec3("lightPos", lightPos);
-        drawScene(depthShader, initialCube, blueBigCube, sphere);
+        drawScene(shader, initialCube, blueBigCube, sphere);
+
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         // 2. render scene as normal
@@ -270,74 +270,19 @@ int main(int argc, char* argv[])
 
         shader.use();
 
-        shader.setVec3("viewPos", camera.Position);
-        shader.setFloat("material.shininess", 32.0f);
-        shader.setBool("isSpotLightOn", isSpotLightOn);
-
-        /*
-           Here we set all the uniforms for the 5/6 types of lights we have. We have to set them manually and index
-           the proper PointLight struct in the array to set each uniform variable. This can be done more code-friendly
-           by defining light types as classes and set their values in there, or by using a more efficient uniform approach
-           by using 'Uniform buffer objects', but that is something we'll discuss in the 'Advanced GLSL' tutorial.
-        */
-        // directional light
-        shader.setVec3("dirLight.direction", -0.2f, -1.0f, -0.3f);
-        if (!isNight) shader.setVec3("dirLight.ambient", 0.6f, 0.6f, 0.6f);
-        else shader.setVec3("dirLight.ambient", 0.1f, 0.1f, 0.1f);
-        shader.setVec3("dirLight.diffuse", 0.4f, 0.4f, 0.4f);
-        shader.setVec3("dirLight.specular", 0.5f, 0.5f, 0.5f);
-        // point light 1
-        shader.setVec3("pointLights[0].position", pointLightPositions[0]);
-        shader.setVec3("pointLights[0].ambient", 0.25f, 0.25f, 0.25f);
-        shader.setVec3("pointLights[0].diffuse", 0.8f, 0.8f, 0.8f);
-        shader.setVec3("pointLights[0].specular", 1.0f, 1.0f, 1.0f);
-        shader.setFloat("pointLights[0].constant", 1.0f);
-        shader.setFloat("pointLights[0].linear", 0.09f);
-        shader.setFloat("pointLights[0].quadratic", 0.032f);
-        // point light 2
-        shader.setVec3("pointLights[1].position", pointLightPositions[1]);
-        shader.setVec3("pointLights[1].ambient", 0.25f, 0.25f, 0.25f);
-        shader.setVec3("pointLights[1].diffuse", 0.8f, 0.8f, 0.8f);
-        shader.setVec3("pointLights[1].specular", 1.0f, 1.0f, 1.0f);
-        shader.setFloat("pointLights[1].constant", 1.0f);
-        shader.setFloat("pointLights[1].linear", 0.09f);
-        shader.setFloat("pointLights[1].quadratic", 0.032f);
-        // spotLight
-
-        shader.setVec3("spotLight.position", camera.Position);
-        shader.setVec3("spotLight.direction", camera.Front);
-        shader.setVec3("spotLight.ambient", 0.2f, 0.2f, 0.2f);
-        shader.setVec3("spotLight.diffuse", 1.0f, 1.0f, 1.0f);
-        shader.setVec3("spotLight.specular", 1.0f, 1.0f, 1.0f);
-        shader.setFloat("spotLight.constant", 1.0f);
-        shader.setFloat("spotLight.linear", 0.09f);
-        shader.setFloat("spotLight.quadratic", 0.032f);
-        shader.setFloat("spotLight.cutOff", glm::cos(glm::radians(17.5f)));
-        shader.setFloat("spotLight.outerCutOff", glm::cos(glm::radians(25.0f)));
-
-        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 1000.0f);
-        glm::mat4 view = camera.GetViewMatrix();
-        shader.setMat4("projectionMatrix", projection);
-        shader.setMat4("viewMatrix", view);
-
-        // set lighting uniforms
-        shader.setVec3("lightPos", lightPos);
-        shader.setVec3("viewPos", camera.Position);
-        shader.setInt("noShadows", noShadows); // enable/disable noShadows by pressing 'SPACE'
-        shader.setFloat("far_plane", far_plane);
-
+        setShaderValues(shader);
         // bind diffuse map
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, backgroundTexture);
+        glBindTexture(GL_TEXTURE_2D, defaultTexture);
         // bind specular map
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, backgroundTexture);
+        glBindTexture(GL_TEXTURE_2D, defaultTexture);
         // DONT TOUCH
         glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubemap);
 
         drawScene(shader, initialCube, blueBigCube, sphere);
-        buildLightCube(lightCubeShader, sphere, lightPos);
+        buildLightCube(lightCubeShader, sphere);
 
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         // End Frame
@@ -349,22 +294,33 @@ int main(int argc, char* argv[])
 
     return 0;
 }
+
+
 void drawScene(Shader shader, GLuint initialCube, GLuint blueBigCube, GLuint sphere) {
-    buildBackground(shader, blueBigCube);
-    buildBuildingABCD(shader, initialCube);
-    buildScrapers(shader, initialCube);
-    buildTree(shader, initialCube);
-    buildStreetAndDecor(shader, initialCube, sphere);
-    buildShops(shader, initialCube);
-    buildFountain(shader, initialCube, sphere);
-    buildPeople(shader, initialCube);
+
+    for (int i = 0; i < squareLocations.size(); i++) {
+        drawSquare(shader, initialCube, blueBigCube, sphere, squareLocations[i].x, squareLocations[i].z);
+    }
 }
+
+bool cameraInsideCurrentSquare() {
+    return camera.Position.z >= currentSquareLocation.z - 25.0f && camera.Position.z <= currentSquareLocation.z + 25.0f
+           && camera.Position.x >= currentSquareLocation.x - 25.0f && camera.Position.x <= currentSquareLocation.x + 25.0f;
+}
+
+
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        if ( collisionDetection()) {
-            camera.ProcessKeyboard(FORWARD, deltaTime);
-        } else {
-            camera.Position = initialCameraPos;
+        camera.ProcessKeyboard(FORWARD, deltaTime);
+        if (!cameraInsideCurrentSquare()) {
+             Location newCurrentLocation = newSquareLocation(camera.Position);
+             currentSquareLocation = newCurrentLocation;
+             cout << "camera position: " << camera.Position.x << ", " << camera.Position.z << endl;
+             cout << "new square location: " << currentSquareLocation.x << ", " << currentSquareLocation.z << endl;
+
+             // now we need to add the new locations to the vector so that they get drawn when we pass
+             // to the while loop again.
+             addNewLocations();
         }
     }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
@@ -373,7 +329,6 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         } else {
             camera.Position = initialCameraPos;
         }
-
     }
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
         if (collisionDetection()) {
@@ -405,407 +360,36 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 }
-// glfw: whenever the mouse moves, this callback is called
-// -------------------------------------------------------
-void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
-{
-    float xpos = static_cast<float>(xposIn);
-    float ypos = static_cast<float>(yposIn);
-    if (firstMouse) {
-        lastX = xpos;
-        lastY = ypos;
-        firstMouse = false;
+
+Location newSquareLocation(vec3 cameraPosition) {
+    Location newLocation;
+    if (cameraPosition.x > currentSquareLocation.x + 25) {
+        newLocation = {currentSquareLocation.x + 50.0f, currentSquareLocation.z , false, false, false, true};
+    } else if (cameraPosition.x < currentSquareLocation.x - 25) {
+        newLocation = {currentSquareLocation.x - 50.0f, currentSquareLocation.z , false, false, true, false};
+    } else if (cameraPosition.z > currentSquareLocation.z + 25) {
+        newLocation = {currentSquareLocation.x , currentSquareLocation.z + 50.0f, false, true, false, false};
+    } else if (cameraPosition.z < currentSquareLocation.z - 25) {
+        newLocation = {currentSquareLocation.x , currentSquareLocation.z - 50.0f, true, false, false, false};
     }
-    float xoffset = xpos - lastX;
-    float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
-    lastX = xpos;
-    lastY = ypos;
-    camera.ProcessMouseMovement(xoffset, yoffset);
+    return newLocation;
 }
-// glfw: whenever the mouse scroll wheel scrolls, this callback is called
-// ----------------------------------------------------------------------
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
-{
-    camera.ProcessMouseScroll(static_cast<float>(yoffset));
-}
-GLuint loadTexture(const char* filename)
-{
-    // Step1 Create and bind textures
-    GLuint textureId = 0;
-    glGenTextures(1, &textureId);
-    assert(textureId != 0);
-    glBindTexture(GL_TEXTURE_2D, textureId);
-    // Step2 Set filter parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    // Step3 Load Textures with dimension data
-    int width, height, nrChannels;
-    unsigned char* data = stbi_load(filename, &width, &height, &nrChannels, 0);
-    if (!data)
-    {
-        std::cerr << "Error::Texture could not load texture file:" << filename << std::endl;
-        return 0;
+
+void addNewLocations() {
+    if (!currentSquareLocation.rightSquare) {
+        Location newLocation = {currentSquareLocation.x + 50.0f, currentSquareLocation.z , false, false, false, true};
+        squareLocations.push_back(newLocation);
     }
-    // Step4 Upload the texture to the PU
-    GLenum format = 0;
-    if (nrChannels == 1)
-        format = GL_RED;
-    else if (nrChannels == 3)
-        format = GL_RGB;
-    else if (nrChannels == 4)
-        format = GL_RGBA;
-    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height,
-                 0, format, GL_UNSIGNED_BYTE, data);
-    // Step5 Free resources
-    stbi_image_free(data);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    return textureId;
-}
-void buildBackground(Shader &shader, GLuint blueBigCube) {
-    glBindVertexArray(blueBigCube);// Big Blue Cube
-    translateMatrix = translate(mat4(1.0f), vec3(0.0f, 69.8f, 0.0f));
-    rotateMatrix = rotate(mat4(1.0f), radians(0.0f), vec3(0.0f, 0.0f, 1.0f));
-    scaleMatrix = scale(mat4(1.0f), vec3(500.0f, 70.0f, 500.0f));
-    modelMatrix = translateMatrix * rotateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    //shader.setVec3("color", 129.0f/255, 174.0f/255, 208.0f/255);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, backgroundTexture);
-    // bind specular map
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, backgroundTexture);
-    glDisable(GL_CULL_FACE);
-    shader.setInt("reverse_normals", 1);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-    shader.setInt("reverse_normals", 0);
-    glEnable(GL_CULL_FACE);
-
-}
-void buildBuildingABCD(Shader &shader, GLuint initialCube) {
-    glBindVertexArray(initialCube);// CUBE BASE
-        //Builds Building
-        translateMatrix = translate(mat4(1.0f), vec3(12.5f, 20.0f, 12.5f));
-        scaleMatrix = scale(mat4(1.0f), vec3(25.0f, 20.0f, 25.0f));
-        modelMatrix = translateMatrix * scaleMatrix;
-        shader.setMat4("modelMatrix", modelMatrix);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, buildingTextures[0]);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-
-        //building antenna
-        translateMatrix = translate(mat4(1.0f), vec3(12.5, 24.0f, 12.5f));
-        scaleMatrix = scale(mat4(1.0f), vec3(10.0f, 4.0f, 0.1f));
-        modelMatrix = translateMatrix * scaleMatrix;
-        shader.setMat4("modelMatrix", modelMatrix);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, antennaTexture);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-
-}
-//this builds the main buildings in the center
-void buildScrapers(Shader &shader, GLuint initialCube) {
-    glBindVertexArray(initialCube);// CUBE BASE
-        translateMatrix = translate(mat4(1.0f), vec3(-12.5f, 40.0f, -12.5));
-        scaleMatrix = scale(mat4(1.0f), vec3(25.0f, 40.0f, 25.0f));
-        modelMatrix = translateMatrix * scaleMatrix;
-        shader.setMat4("modelMatrix", modelMatrix);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, scraperTextures[0]);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-}
-void buildTree(Shader &shader, GLuint initialCube) {
-    glBindVertexArray(initialCube);// CUBE BASE
-
-    for(int i=0;i<6;i++) {
-        // building bark
-        translateMatrix = translate(mat4(1.0f), vec3(21.5, 3.0f, 21.5-i*8.5));
-        scaleMatrix = scale(mat4(1.0f), vec3(3.0f, 3.0f, 3.0f));
-        modelMatrix = translateMatrix * scaleMatrix;
-        shader.setMat4("modelMatrix", modelMatrix);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, woodTexture);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-        //building upper tree
-        translateMatrix = translate(mat4(1.0f), vec3(21.5, 7.0f, 21.5f-i*8.5));
-        scaleMatrix = scale(mat4(1.0f), vec3(7.5f, 3.0f, 7.5f));
-        modelMatrix = translateMatrix * scaleMatrix;
-        shader.setMat4("modelMatrix", modelMatrix);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, treesTexture[0]);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+    if (!currentSquareLocation.leftSquare) {
+        Location newLocation = {currentSquareLocation.x - 50.0f, currentSquareLocation.z , false, false, true, false};
+        squareLocations.push_back(newLocation);
     }
-}
-void buildStreetAndDecor(Shader &shader, GLuint initialCube, GLuint sphere) {
-    // this builds the street
-    for (int i = 0; i < 2; i++) {
-        translateMatrix = translate(mat4(1.0f), vec3(0.0f, -0.01f, .0f));
-        scaleMatrix = scale(mat4(1.0f), vec3(10.0f, 0.0f, 100.0f));
-        rotateMatrix = rotate(mat4(1.0f), radians(90.0f), vec3(0.0f, 1.0f, 0.0f));
-        if(i==1){rotateMatrix = rotate(mat4(1.0f), radians(0.0f), vec3(0.0f, 1.0f, 0.0f));}
-        modelMatrix = translateMatrix * rotateMatrix * scaleMatrix;
-        shader.setMat4("modelMatrix", modelMatrix);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, streetTexture);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+    if (!currentSquareLocation.upSquare) {
+        Location newLocation = {currentSquareLocation.x , currentSquareLocation.z + 50.0f, false, true, false, false};
+        squareLocations.push_back(newLocation);
     }
-    // making a temp wall streets
-    translateMatrix = translate(mat4(1.0f), vec3(25.0f, -0.01f, 0.0f));
-    scaleMatrix = scale(mat4(1.0f), vec3(10.0f, 0.0f, 100.0f));
-    rotateMatrix = rotate(mat4(1.0f), radians(0.0f), vec3(0.0f, 1.0f, 0.0f));
-    modelMatrix = translateMatrix * rotateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-    translateMatrix = translate(mat4(1.0f), vec3(-25.0f, -0.01f, 0.0f));
-    scaleMatrix = scale(mat4(1.0f), vec3(10.0f, 0.0f, 100.0f));
-    rotateMatrix = rotate(mat4(1.0f), radians(0.0f), vec3(0.0f, 1.0f, 0.0f));
-    modelMatrix = translateMatrix * rotateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-    translateMatrix = translate(mat4(1.0f), vec3(0.0f, -0.01f, 25.0f));
-    scaleMatrix = scale(mat4(1.0f), vec3(10.0f, 0.0f, 100.0f));
-    rotateMatrix = rotate(mat4(1.0f), radians(90.0f), vec3(0.0f, 1.0f, 0.0f));
-    modelMatrix = translateMatrix * rotateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-    translateMatrix = translate(mat4(1.0f), vec3(0.0f, -0.01f, -25.0f));
-    scaleMatrix = scale(mat4(1.0f), vec3(10.0f, 0.0f, 100.0f));
-    rotateMatrix = rotate(mat4(1.0f), radians(90.0f), vec3(0.0f, 1.0f, 0.0f));
-    modelMatrix = translateMatrix * rotateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-
-    //this builds the flooring
-    translateMatrix = translate(mat4(1.0f), vec3(12.5f, -0.09f, 12.5f));
-    scaleMatrix = scale(mat4(1.0f), vec3(50.0f, 0.0f, 50.0f));
-    modelMatrix = translateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, floorTexture);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-    //this builds the stops
-    for (int i = 0; i < 4; i++) {
-        glm::vec3 position;
-        if (i == 0) {position = glm::vec3(4.0f, 2.5f, 4.0f);}
-        else if (i == 1) {position = glm::vec3(4.0f, 2.5f, -4.0f);}
-        else if (i == 2) {position = glm::vec3(-4.0f, 2.5f, 4.0f);}
-        else if (i == 3) {position = glm::vec3(-4.0f, 2.5f, -4.0f);}
-        translateMatrix = glm::translate(mat4(1.0f), position);
-        scaleMatrix = glm::scale(mat4(1.0f), glm::vec3(1.5f, 2.5f, 1.5f));
-        modelMatrix = translateMatrix * scaleMatrix;
-        shader.setMat4("modelMatrix", modelMatrix);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, stopTexture);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+    if (!currentSquareLocation.downSquare) {
+        Location newLocation = {currentSquareLocation.x , currentSquareLocation.z - 50.0f, true, false, false, false};
+        squareLocations.push_back(newLocation);
     }
-    // this builds the stop signs
-
-
-        translateMatrix = translate(mat4(1.0f), vec3(0.0f, 8.0f, 0.0f));
-        scaleMatrix = scale(mat4(1.0f), vec3(0.5f, 8.0f, 5.0f));
-        modelMatrix = translateMatrix * scaleMatrix;
-        shader.setMat4("modelMatrix", modelMatrix);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, firehydrantTexture);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-
-    //this draws the balloon
-    float time = glfwGetTime(); // Get the current time
-    float yOffset = cos(time) * 45.0f;
-    translateMatrix = translate(mat4(1.0f), vec3(90.0f, 90.0f + yOffset, 0.0f));
-    scaleMatrix = scale(mat4(1.0f), vec3(15.0f, 5.0f, 15.0f));
-    modelMatrix = translateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, balloonTextures[0]);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-
-    // testing drawing a sphere
-    //////////////// 1 //////////////
-    translateMatrix = translate(mat4(1.0f), vec3(0.0f, 50.0f, 20.0f));
-    scaleMatrix = scale(mat4(1.0f), vec3(20.0f, 5.0f, 20.0f));
-    modelMatrix = translateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, balloonTextures[0]);
-    glBindVertexArray(sphere);
-    glDrawElements(GL_TRIANGLES, vertexCount ,GL_UNSIGNED_INT,(void*)0);
-
-    //this draws the blimp
-    translateMatrix = translate(mat4(1.0f), vec3( yOffset, 100.0f, 0.0f));
-    scaleMatrix = scale(mat4(1.0f), vec3(70.0f, 5.0f, 15.0f));
-    modelMatrix = translateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, balloonTextures[1]);
-    glDrawElements(GL_TRIANGLES, vertexCount ,GL_UNSIGNED_INT,(void*)0);
-    // this draws the welcome sign
-    glBindVertexArray(initialCube);
-    //sign on blimp
-    translateMatrix = translate(mat4(1.0f), vec3( yOffset-31, 100.0f, 0.0f));
-    scaleMatrix = scale(mat4(1.0f), vec3(50.0f, 2.0f, 0.1f));
-    modelMatrix = translateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, signsTexture[0]);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-
-    translateMatrix = translate(mat4(1.0f), vec3( 6.0f, 1.5, -2.5f));
-    scaleMatrix = scale(mat4(1.0f), vec3(5.5f, 1.5f, 0.25f));
-    modelMatrix = translateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, signsTexture[4]);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-}
-void buildShops(Shader &shader, GLuint initialCube) {
-    translateMatrix = translate(mat4(1.0f), vec3(-10.0f, 7.0f, 12.5f));
-    scaleMatrix = scale(mat4(1.0f), vec3(12.5f, 7.0f, 32.0f));
-    modelMatrix = translateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, shopTextures[0]);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-    translateMatrix = translate(mat4(1.0f), vec3(-20.0f, 7.0f, 12.5f));
-    scaleMatrix = scale(mat4(1.0f), vec3(12.5f, 7.0f, 32.0f));
-    modelMatrix = translateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, shopTextures[0]);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-
-
-}
-void buildFountain(Shader &shader, GLuint initialCube, GLuint sphere) {
-
-    float time = glfwGetTime() * 5; // Get the current time
-    float xOffset = sin(time) * 0.3f;
-    float zOffset = cos(time) * 0.3f;
-    //bottom of the fountain
-    glBindVertexArray(initialCube);
-    translateMatrix = translate(mat4(1.0f), vec3(12.5f, 2.0f, -12.5f));
-    scaleMatrix = scale(mat4(1.0f), vec3(27.0f, 2.0f, 27.0));
-    modelMatrix = translateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, fountainTextures[0]);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-    // animating water
-    glBindVertexArray(sphere);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, fountainTextures[2]);
-    translateMatrix = translate(mat4(1.0f), vec3(12.25f - xOffset, 3.99f, -12.25f + zOffset));
-    scaleMatrix = scale(mat4(1.0f), vec3(23.0f, 0.1f, 23.0f));
-    modelMatrix = translateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, (void *) 0);
-    translateMatrix = translate(mat4(1.0f), vec3(12.5f + zOffset, 3.99f, -12.5f - xOffset));
-    scaleMatrix = scale(mat4(1.0f), vec3(23.0f, 0.1f, 23.0f));
-    modelMatrix = translateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, (void *) 0);
-    translateMatrix = translate(mat4(1.0f), vec3(12.25f - xOffset, 3.99f, -12.25f + zOffset));
-    scaleMatrix = scale(mat4(1.0f), vec3(23.0f, 0.1f, 23.0f));
-    modelMatrix = translateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, (void *) 0);
-    translateMatrix = translate(mat4(1.0f), vec3(12.5f + zOffset, 3.99f, -12.5f - zOffset));
-    scaleMatrix = scale(mat4(1.0f), vec3(23.0f, 0.1f, 23.0f));
-    modelMatrix = translateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, (void *) 0);
-    translateMatrix = translate(mat4(1.0f), vec3(12.f - xOffset, 3.99f, -12.0f + xOffset));
-    scaleMatrix = scale(mat4(1.0f), vec3(25.0f, 0.1f, 25.0f));
-    modelMatrix = translateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, (void *) 0);
-    glBindVertexArray(initialCube);
-    //animating water as squares
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, fountainTextures[2]);
-    translateMatrix = translate(mat4(1.0f), vec3(12.0f , 3.998f, -12.0f ));
-    scaleMatrix = scale(mat4(1.0f), vec3(26.0f, 0.01f, 26.0f));
-    modelMatrix = translateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-    translateMatrix = translate(mat4(1.0f), vec3(12.5f + zOffset, 3.996f, -12.5f - zOffset));
-    scaleMatrix = scale(mat4(1.0f), vec3(23.0f, 0.01f, 23.0f));
-    modelMatrix = translateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-    translateMatrix = translate(mat4(1.0f), vec3(12.f - xOffset, 3.999f, -12.0f + xOffset));
-    scaleMatrix = scale(mat4(1.0f), vec3(25.0f, 0.01f, 25.0f));
-    modelMatrix = translateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-    //fountain bricks
-   for (int i = 0; i < 2; i++) {
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, floorTexture);
-        translateMatrix = translate(mat4(1.0f), vec3(12.0f, 3.999f, -5.7f -i* 13.3));
-        scaleMatrix = scale(mat4(1.0f), vec3(27.0f, 0.25f, 2.0f));
-        modelMatrix = translateMatrix * scaleMatrix;
-        shader.setMat4("modelMatrix", modelMatrix);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-    }
-    for (int i = 0; i < 2; i++) {
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, floorTexture);
-        translateMatrix = translate(mat4(1.0f), vec3(19.0f -i* 13.3, 3.999f,-12.0f));
-        scaleMatrix = scale(mat4(1.0f), vec3(2.0f, 0.25f, 27.0f));
-        modelMatrix = translateMatrix * scaleMatrix;
-        shader.setMat4("modelMatrix", modelMatrix);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-    }
-}
-void buildPeople(Shader &shader, GLuint initialCube){
-    glBindVertexArray(initialCube);
-    translateMatrix = translate(mat4(1.0f), vec3(-3.0f, 2.0f, 6.0f));scaleMatrix = scaleMatrix = scale(mat4(1.0f), vec3(0.1f, 2.0f, 3.0f));
-    modelMatrix = translateMatrix * scaleMatrix;shader.setMat4("modelMatrix", modelMatrix);
-    glActiveTexture(GL_TEXTURE0);glBindTexture(GL_TEXTURE_2D, peopleTextures[0]);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-    translateMatrix = translate(mat4(1.0f), vec3(-3.0f, 2.0f, -6.0f));scaleMatrix = scaleMatrix = scale(mat4(1.0f), vec3(0.1f, 2.0f, 3.0f));
-    modelMatrix = translateMatrix * scaleMatrix;shader.setMat4("modelMatrix", modelMatrix);
-    glActiveTexture(GL_TEXTURE0);glBindTexture(GL_TEXTURE_2D, peopleTextures[0]);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-}
-void buildLightCube(Shader &shader, GLuint sphere, vec3 lightPos) {
-
-    glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 1000.0f);
-    glm::mat4 view = camera.GetViewMatrix();
-
-    shader.use();
-    shader.setMat4("projection", projection);
-    shader.setMat4("view", view);
-    glm::mat4 model;
-
-    //////////////// 1 //////////////
-    model = glm::mat4(1.0f);
-    model = glm::translate(model, lightPos);
-    model = glm::scale(model, glm::vec3(1.0f)); // a smaller cube
-    shader.setMat4("model", model);
-
-    glBindVertexArray(sphere);
-    glDrawElements(GL_TRIANGLES, vertexCount ,GL_UNSIGNED_INT,(void*)0);
-
-    //////////////// 2 //////////////
-    model = glm::mat4(1.0f);
-    model = glm::translate(model, pointLightPositions[0]);
-    model = glm::scale(model, glm::vec3(1.0f)); // a smaller cube
-    shader.setMat4("model", model);
-
-    glBindVertexArray(sphere);
-    glDrawElements(GL_TRIANGLES, vertexCount ,GL_UNSIGNED_INT,(void*)0);
-
-    //////////////// 3 //////////////
-    model = glm::mat4(1.0f);
-    model = glm::translate(model, pointLightPositions[1]);
-    model = glm::scale(model, glm::vec3(1.0f)); // a smaller cube
-    shader.setMat4("model", model);
-
-    glBindVertexArray(sphere);
-    glDrawElements(GL_TRIANGLES, vertexCount ,GL_UNSIGNED_INT,(void*)0);
-}
-
-bool collisionDetection() {
-    return (camera.Position.y < bigWall.maxY && camera.Position.y > bigWall.minY)  &&  (camera.Position.x < bigWall.maxX && camera.Position.x > bigWall.minX)  &&  (camera.Position.z < bigWall.maxZ && camera.Position.z > bigWall.minZ);
 }
