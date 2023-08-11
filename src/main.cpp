@@ -10,6 +10,7 @@
  */
 
 
+#include <algorithm>
 #include <iostream>
 #include <vector>
 
@@ -30,20 +31,32 @@
 using namespace glm;
 using namespace std;
 
-
-struct Location {
+struct Position {
     float x = 0.0f;
     float z = 0.0f;
-    bool rightSquare = false;
-    bool leftSquare = false;
-    bool upSquare = false;
-    bool downSquare = false;
+
+    bool operator==(const Position& other) const {
+        return x == other.x && z == other.z;
+    }
+};
+
+struct hasSides {
+    bool left = false;
+    bool right = false;
+    bool up = false;
+    bool down = false;
+};
+
+struct Location {
+    Position position;
+    hasSides sides;
 };
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 void drawScene(Shader shader, GLuint initialCube, GLuint blueBigCube, GLuint sphere);
-Location newSquareLocation(vec3 cameraPosition);
+Position newSquarePosition(vec3 cameraPosition);
 void addNewLocations();
+hasSides findNeighboringSides(Position newPosition);
 
 extern const unsigned int SCR_WIDTH = 1024;
 extern const unsigned int SCR_HEIGHT = 768;
@@ -84,6 +97,9 @@ Location squareLocation5 = {0.0f, -50.0f, false, false, false, true};
 Location currentSquareLocation = squareLocation;
 
 vector<Location> squareLocations;
+// the following vector will be used to store the positions of the squares that are stored already in squareLocations
+// this will help us manipulate the data easily later
+vector<Position> squarePositions;
 
 int main() {
     // Initialize GLFW and OpenGL version
@@ -119,6 +135,13 @@ int main() {
     squareLocations.push_back(squareLocation3);
     squareLocations.push_back(squareLocation4);
     squareLocations.push_back(squareLocation5);
+
+
+    squarePositions.push_back(squareLocation.position);
+    squarePositions.push_back(squareLocation2.position);
+    squarePositions.push_back(squareLocation3.position);
+    squarePositions.push_back(squareLocation4.position);
+    squarePositions.push_back(squareLocation5.position);
 
     // whenever we add a square, we check if it has neighboring squares, (obviously, it should have at least 1)
     // this will be done later when we add squares dynamically
@@ -299,13 +322,13 @@ int main() {
 void drawScene(Shader shader, GLuint initialCube, GLuint blueBigCube, GLuint sphere) {
 
     for (int i = 0; i < squareLocations.size(); i++) {
-        drawSquare(shader, initialCube, blueBigCube, sphere, squareLocations[i].x, squareLocations[i].z);
+        drawSquare(shader, initialCube, blueBigCube, sphere, squareLocations[i].position.x, squareLocations[i].position.z);
     }
 }
 
 bool cameraInsideCurrentSquare() {
-    return camera.Position.z >= currentSquareLocation.z - 25.0f && camera.Position.z <= currentSquareLocation.z + 25.0f
-           && camera.Position.x >= currentSquareLocation.x - 25.0f && camera.Position.x <= currentSquareLocation.x + 25.0f;
+    return camera.Position.z >= currentSquareLocation.position.z - 25.0f && camera.Position.z <= currentSquareLocation.position.z + 25.0f
+           && camera.Position.x >= currentSquareLocation.position.x - 25.0f && camera.Position.x <= currentSquareLocation.position.x + 25.0f;
 }
 
 
@@ -313,10 +336,11 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
         camera.ProcessKeyboard(FORWARD, deltaTime);
         if (!cameraInsideCurrentSquare()) {
-             Location newCurrentLocation = newSquareLocation(camera.Position);
-             currentSquareLocation = newCurrentLocation;
+             Position newCurrentPosition = newSquarePosition(camera.Position);
+             hasSides sides = findNeighboringSides(newCurrentPosition);
+             currentSquareLocation = Location{newCurrentPosition, sides};
              cout << "camera position: " << camera.Position.x << ", " << camera.Position.z << endl;
-             cout << "new square location: " << currentSquareLocation.x << ", " << currentSquareLocation.z << endl;
+             cout << "new square location: " << currentSquareLocation.position.x << ", " << currentSquareLocation.position.z << endl;
 
              // now we need to add the new locations to the vector so that they get drawn when we pass
              // to the while loop again.
@@ -326,10 +350,11 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
         camera.ProcessKeyboard(BACKWARD, deltaTime);
         if (!cameraInsideCurrentSquare()) {
-            Location newCurrentLocation = newSquareLocation(camera.Position);
-            currentSquareLocation = newCurrentLocation;
+            Position newCurrentPosition = newSquarePosition(camera.Position);
+            hasSides sides = findNeighboringSides(newCurrentPosition);
+            currentSquareLocation = Location{newCurrentPosition, sides};
             cout << "camera position: " << camera.Position.x << ", " << camera.Position.z << endl;
-            cout << "new square location: " << currentSquareLocation.x << ", " << currentSquareLocation.z << endl;
+            cout << "new square location: " << currentSquareLocation.position.x << ", " << currentSquareLocation.position.z << endl;
 
             // now we need to add the new locations to the vector so that they get drawn when we pass
             // to the while loop again.
@@ -339,10 +364,11 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
         camera.ProcessKeyboard(LEFT, deltaTime);
         if (!cameraInsideCurrentSquare()) {
-            Location newCurrentLocation = newSquareLocation(camera.Position);
-            currentSquareLocation = newCurrentLocation;
+            Position newCurrentPosition = newSquarePosition(camera.Position);
+            hasSides sides = findNeighboringSides(newCurrentPosition);
+            currentSquareLocation = Location{newCurrentPosition, sides};
             cout << "camera position: " << camera.Position.x << ", " << camera.Position.z << endl;
-            cout << "new square location: " << currentSquareLocation.x << ", " << currentSquareLocation.z << endl;
+            cout << "new square location: " << currentSquareLocation.position.x << ", " << currentSquareLocation.position.z << endl;
 
             // now we need to add the new locations to the vector so that they get drawn when we pass
             // to the while loop again.
@@ -352,10 +378,11 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
         camera.ProcessKeyboard(RIGHT, deltaTime);
         if (!cameraInsideCurrentSquare()) {
-            Location newCurrentLocation = newSquareLocation(camera.Position);
-            currentSquareLocation = newCurrentLocation;
+            Position newCurrentPosition = newSquarePosition(camera.Position);
+            hasSides sides = findNeighboringSides(newCurrentPosition);
+            currentSquareLocation = Location{newCurrentPosition, sides};
             cout << "camera position: " << camera.Position.x << ", " << camera.Position.z << endl;
-            cout << "new square location: " << currentSquareLocation.x << ", " << currentSquareLocation.z << endl;
+            cout << "new square location: " << currentSquareLocation.position.x << ", " << currentSquareLocation.position.z << endl;
 
             // now we need to add the new locations to the vector so that they get drawn when we pass
             // to the while loop again.
@@ -379,41 +406,87 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         glfwSetWindowShouldClose(window, true);
 }
 
-Location newSquareLocation(vec3 cameraPosition) {
-    Location newLocation;
-    if (cameraPosition.x > currentSquareLocation.x + 25) {
-        newLocation = {currentSquareLocation.x + 50.0f, currentSquareLocation.z , false, true, false, false};
-    } else if (cameraPosition.x < currentSquareLocation.x - 25) {
-        newLocation = {currentSquareLocation.x - 50.0f, currentSquareLocation.z , true, false, false, false};
-    } else if (cameraPosition.z > currentSquareLocation.z + 25) {
-        newLocation = {currentSquareLocation.x , currentSquareLocation.z + 50.0f, false, false, true, false};
-    } else if (cameraPosition.z < currentSquareLocation.z - 25) {
-        newLocation = {currentSquareLocation.x , currentSquareLocation.z - 50.0f, false, false, false, true};
+Position newSquarePosition(vec3 cameraPosition) {
+    Position newPosition;
+    if (cameraPosition.x > currentSquareLocation.position.x + 25) {
+        newPosition = {currentSquareLocation.position.x + 50.0f, currentSquareLocation.position.z};
+    } else if (cameraPosition.x < currentSquareLocation.position.x - 25) {
+        newPosition = {currentSquareLocation.position.x - 50.0f, currentSquareLocation.position.z};
+    } else if (cameraPosition.z > currentSquareLocation.position.z + 25) {
+        newPosition = {currentSquareLocation.position.x , currentSquareLocation.position.z + 50.0f};
+    } else if (cameraPosition.z < currentSquareLocation.position.z - 25) {
+        newPosition = {currentSquareLocation.position.x , currentSquareLocation.position.z - 50.0f};
     }
-    return newLocation;
+    return newPosition;
 }
 
 void addNewLocations() {
-    if (!currentSquareLocation.rightSquare) {
-        Location newLocation = {currentSquareLocation.x + 50.0f, currentSquareLocation.z , false, false, false, true};
+    if (!currentSquareLocation.sides.right) {
+        Position newPosition = {currentSquareLocation.position.x + 50.0f, currentSquareLocation.position.z};
+        squarePositions.push_back(newPosition);
+        hasSides sides = findNeighboringSides(newPosition);
+        Location newLocation = {newPosition , sides};
         squareLocations.push_back(newLocation);
-        cout << "new right square location: " << newLocation.x << ", " << newLocation.z << endl;
+        cout << "new right square location: " << newLocation.position.x << ", " << newLocation.position.z << endl;
 
     }
-    if (!currentSquareLocation.leftSquare) {
-        Location newLocation = {currentSquareLocation.x - 50.0f, currentSquareLocation.z , false, false, true, false};
+    if (!currentSquareLocation.sides.left) {
+        Position newPosition = {currentSquareLocation.position.x - 50.0f, currentSquareLocation.position.z};
+        squarePositions.push_back(newPosition);
+        hasSides sides = findNeighboringSides(newPosition);
+        Location newLocation = {newPosition, sides};
         squareLocations.push_back(newLocation);
-        cout << "new left square location: " << newLocation.x << ", " << newLocation.z << endl;
+        cout << "new left square location: " << newLocation.position.x << ", " << newLocation.position.z << endl;
     }
-    if (!currentSquareLocation.upSquare) {
-        Location newLocation = {currentSquareLocation.x , currentSquareLocation.z - 50.0f, true, false, false, false};
+    if (!currentSquareLocation.sides.up) {
+        Position newPosition = {currentSquareLocation.position.x , currentSquareLocation.position.z - 50.0f};
+        squarePositions.push_back(newPosition);
+        hasSides sides = findNeighboringSides(newPosition);
+        Location newLocation = {newPosition, sides};
         squareLocations.push_back(newLocation);
-        cout << "new up square location: " << newLocation.x << ", " << newLocation.z << endl;
+        cout << "new up square location: " << newLocation.position.x << ", " << newLocation.position.z << endl;
 
     }
-    if (!currentSquareLocation.downSquare) {
-        Location newLocation = {currentSquareLocation.x , currentSquareLocation.z + 50.0f, false, true, false, false};
+    if (!currentSquareLocation.sides.down) {
+        Position newPosition = {currentSquareLocation.position.x , currentSquareLocation.position.z + 50.0f};
+        squarePositions.push_back(newPosition);
+        hasSides sides = findNeighboringSides(newPosition);
+        Location newLocation = {newPosition, sides};
         squareLocations.push_back(newLocation);
-        cout << "new down square location: " << newLocation.x << ", " << newLocation.z << endl;
+        cout << "new down square location: " << newLocation.position.x << ", " << newLocation.position.z << endl;
     }
+}
+
+
+hasSides findNeighboringSides(Position newPosition) {
+
+    // there are 4 possibilities for the neighboring sides:
+    // 1. right
+    Position rightPosition = {newPosition.x + 50.0f, newPosition.z};
+    // 2. left
+    Position leftPosition = {newPosition.x - 50.0f, newPosition.z};
+    // 3. up
+    Position upPosition = {newPosition.x, newPosition.z - 50.0f};
+    // 4. down
+    Position downPosition = {newPosition.x, newPosition.z + 50.0f};
+
+    hasSides sides = {true, true, true, true};
+
+    if (std::find(squarePositions.begin(), squarePositions.end(), rightPosition) == squarePositions.end()) {
+        // not found
+        sides.right = false;
+    }
+    if (std::find(squarePositions.begin(), squarePositions.end(), leftPosition) == squarePositions.end()) {
+        // not found
+        sides.left = false;
+    }
+    if (std::find(squarePositions.begin(), squarePositions.end(), upPosition) == squarePositions.end()) {
+        // not found
+        sides.up = false;
+    }
+    if (std::find(squarePositions.begin(), squarePositions.end(), downPosition) == squarePositions.end()) {
+        // not found
+        sides.down = false;
+    }
+    return sides;
 }
