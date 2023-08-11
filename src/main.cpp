@@ -382,13 +382,13 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
 Location newSquareLocation(vec3 cameraPosition) {
     Location newLocation;
     if (cameraPosition.x > currentSquareLocation.x + 25) {
-        newLocation = {currentSquareLocation.x + 50.0f, currentSquareLocation.z , false, false, false, true};
+        newLocation = {currentSquareLocation.x + 50.0f, currentSquareLocation.z , false, true, false, false};
     } else if (cameraPosition.x < currentSquareLocation.x - 25) {
-        newLocation = {currentSquareLocation.x - 50.0f, currentSquareLocation.z , false, false, true, false};
+        newLocation = {currentSquareLocation.x - 50.0f, currentSquareLocation.z , true, false, false, false};
     } else if (cameraPosition.z > currentSquareLocation.z + 25) {
-        newLocation = {currentSquareLocation.x , currentSquareLocation.z + 50.0f, false, true, false, false};
+        newLocation = {currentSquareLocation.x , currentSquareLocation.z + 50.0f, false, false, true, false};
     } else if (cameraPosition.z < currentSquareLocation.z - 25) {
-        newLocation = {currentSquareLocation.x , currentSquareLocation.z - 50.0f, true, false, false, false};
+        newLocation = {currentSquareLocation.x , currentSquareLocation.z - 50.0f, false, false, false, true};
     }
     return newLocation;
 }
@@ -397,17 +397,23 @@ void addNewLocations() {
     if (!currentSquareLocation.rightSquare) {
         Location newLocation = {currentSquareLocation.x + 50.0f, currentSquareLocation.z , false, false, false, true};
         squareLocations.push_back(newLocation);
+        cout << "new right square location: " << newLocation.x << ", " << newLocation.z << endl;
+
     }
     if (!currentSquareLocation.leftSquare) {
         Location newLocation = {currentSquareLocation.x - 50.0f, currentSquareLocation.z , false, false, true, false};
         squareLocations.push_back(newLocation);
+        cout << "new left square location: " << newLocation.x << ", " << newLocation.z << endl;
     }
     if (!currentSquareLocation.upSquare) {
-        Location newLocation = {currentSquareLocation.x , currentSquareLocation.z + 50.0f, false, true, false, false};
-        squareLocations.push_back(newLocation);
-    }
-    if (!currentSquareLocation.downSquare) {
         Location newLocation = {currentSquareLocation.x , currentSquareLocation.z - 50.0f, true, false, false, false};
         squareLocations.push_back(newLocation);
+        cout << "new up square location: " << newLocation.x << ", " << newLocation.z << endl;
+
+    }
+    if (!currentSquareLocation.downSquare) {
+        Location newLocation = {currentSquareLocation.x , currentSquareLocation.z + 50.0f, false, true, false, false};
+        squareLocations.push_back(newLocation);
+        cout << "new down square location: " << newLocation.x << ", " << newLocation.z << endl;
     }
 }
