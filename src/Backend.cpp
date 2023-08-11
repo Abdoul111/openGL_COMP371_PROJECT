@@ -63,6 +63,13 @@ mat4 modelMatrix;
 struct Position {
     float x;
     float z;
+
+    bool operator<(const Position& other) const {
+        if (x < other.x) return true;
+        if (x > other.x) return false;
+        return z < other.z;
+    }
+
 };
 struct BuildConstants {
     int random1;
@@ -72,7 +79,7 @@ struct BuildConstants {
     int random5;
 };
 
-map<int, BuildConstants> drawnSquares;
+map<Position, BuildConstants> drawnSquares;
 
 // textures variables
 unsigned int buildingTextures[4];unsigned int balloonTextures[2];unsigned int shopTextures[8];unsigned int scraperTextures[6];
@@ -109,7 +116,8 @@ void drawSquare(Shader shader, GLuint initialCube, GLuint blueBigCube, GLuint sp
     buildFountain(shader, initialCube, sphere, x, z);
     buildPeople(shader, initialCube, x, z);
 
-    //drawnSquares.insert(pair<int, BuildConstants>(Position{x, z}, BuildConstants{3, 3, 3, 3, 3}));
+
+    drawnSquares.insert(pair<Position, BuildConstants>(Position{x, z}, BuildConstants{3, 3, 3, 3, 3}));
 }
 
 // glfw: whenever the mouse moves, this callback is called
