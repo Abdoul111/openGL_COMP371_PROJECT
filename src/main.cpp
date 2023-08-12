@@ -187,16 +187,16 @@ int main() {
     // then I generate what is missing
 
 
-    // random1 : specifies the type (building, shop, facilities, etc)
+    // randomType : specifies the type (building, shop, facilities, etc)
 
 
     // square be a square
-    //if (building) -> random2 : number buildings (1, 2)
+    //if (building) -> randomTexture : number buildings (1, 2)
     //              -> random3 : specifies the height of the building (base= 10 unites + (5 to 10))
     //              -> random4 : specifies the number of trees around the building (0 to 5)
     //              -> random5 : specifies the texture of the building (6 choices)
 
-    // else if (shop) -> random2 : specifies the texture of the shop (8 choices)
+    // else if (shop) -> randomTexture : specifies the texture of the shop (8 choices)
     //               -> random3 : specifies the height of the shop (base= 5 unites + (1 to 5 unites))
 
 
@@ -225,6 +225,7 @@ int main() {
     Shader shader("shaders/textureShader.vs", "shaders/textureShader.fs");
     Shader depthShader("shaders/depthShader.vs", "shaders/depthShader.fs", "shaders/depthShader.gs");
     Shader lightCubeShader("shaders/lightShader.vs", "shaders/lightShader.fs");
+
 
     unsigned int defaultTexture = buildTextures();
 
@@ -361,7 +362,8 @@ bool cameraInsideCurrentSquare() {
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        camera.ProcessKeyboard(FORWARD, deltaTime);
+        camera.ProcessKeyboard(FORWARD, deltaTime); // move forward 1 unite
+
         if (!cameraInsideCurrentSquare()) {
              Position newCurrentPosition = newSquarePosition(camera.Position);
              neighboringSides sides = findNeighboringSides(newCurrentPosition);
@@ -419,7 +421,7 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS && !noShadowsKeyPressed) {
         isNight = !isNight;
     }
-    if (glfwGetKey(window, GLFW_KEY_M) == GLFW_RELEASE) {
+    if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS) {
         isSpotLightOn = !isSpotLightOn;
     }
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && !noShadowsKeyPressed) {

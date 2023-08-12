@@ -117,15 +117,16 @@ void drawSquare(Shader shader, GLuint initialCube, GLuint sphere, float x, float
     buildStreetAndDecor(shader, initialCube, sphere, x, z);
 
     if (drawnSquares.find(Position{x, z}) != drawnSquares.end()) {
-        AreaConstants area1 = drawArea(shader, initialCube, sphere, x, z, 12.5, 12.5, drawnSquares[Position{x, z}].area1.random1);
-        AreaConstants area2 = drawArea(shader, initialCube, sphere, x, z, -12.5, 12.5, drawnSquares[Position{x, z}].area2.random1);
-        AreaConstants area3 = drawArea(shader, initialCube, sphere, x, z, 12.5, -12.5, drawnSquares[Position{x, z}].area3.random1);
-        AreaConstants area4 = drawArea(shader, initialCube, sphere, x, z, -12.5, -12.5, drawnSquares[Position{x, z}].area4.random1);
+        // square is found
+        AreaConstants area1 = drawArea(shader, initialCube, sphere, x, z, 12.5, 12.5, drawnSquares[Position{x, z}].area1.randomType, drawnSquares[Position{x, z}].area1.randomTexture, drawnSquares[Position{x, z}].area1.random3, drawnSquares[Position{x, z}].area1.random4, drawnSquares[Position{x, z}].area1.random5);
+        AreaConstants area2 = drawArea(shader, initialCube, sphere, x, z, -12.5, 12.5, drawnSquares[Position{x, z}].area2.randomType, drawnSquares[Position{x, z}].area2.randomTexture, drawnSquares[Position{x, z}].area2.random3, drawnSquares[Position{x, z}].area2.random4, drawnSquares[Position{x, z}].area2.random5);
+        AreaConstants area3 = drawArea(shader, initialCube, sphere, x, z, 12.5, -12.5, drawnSquares[Position{x, z}].area3.randomType, drawnSquares[Position{x, z}].area3.randomTexture, drawnSquares[Position{x, z}].area3.random3, drawnSquares[Position{x, z}].area3.random4, drawnSquares[Position{x, z}].area3.random5);
+        AreaConstants area4 = drawArea(shader, initialCube, sphere, x, z, -12.5, -12.5, drawnSquares[Position{x, z}].area4.randomType, drawnSquares[Position{x, z}].area4.randomTexture, drawnSquares[Position{x, z}].area4.random3, drawnSquares[Position{x, z}].area4.random4, drawnSquares[Position{x, z}].area4.random5);
     } else {
-        AreaConstants area1 = drawArea(shader, initialCube, sphere, x, z, 12.5, 12.5, 0);
-        AreaConstants area2 = drawArea(shader, initialCube, sphere, x, z, -12.5, 12.5, 0);
-        AreaConstants area3 = drawArea(shader, initialCube, sphere, x, z, 12.5, -12.5, 0);
-        AreaConstants area4 = drawArea(shader, initialCube, sphere, x, z, -12.5, -12.5, 0);
+        AreaConstants area1 = drawArea(shader, initialCube, sphere, x, z, 12.5, 12.5, 0, 0, 0, 0, 0);
+        AreaConstants area2 = drawArea(shader, initialCube, sphere, x, z, -12.5, 12.5, 0, 0, 0, 0, 0);
+        AreaConstants area3 = drawArea(shader, initialCube, sphere, x, z, 12.5, -12.5, 0, 0, 0, 0, 0);
+        AreaConstants area4 = drawArea(shader, initialCube, sphere, x, z, -12.5, -12.5, 0, 0, 0, 0, 0);
 
         drawnSquares.insert(pair<Position, SquareConstants>(Position{x, z}, SquareConstants{area1, area2, area3, area4}));
     }
@@ -141,21 +142,21 @@ void drawSquare(Shader shader, GLuint initialCube, GLuint sphere, float x, float
  * @param type if type is 0, then it will generate a random number between 1 and 4, if it is not 0, then it will use the type passed to it as the type of the area (building, shop, etc...)
  * @return the random values generated for the area so that we can save them in the drawnSquares map
  */
-AreaConstants drawArea(Shader shader, GLuint initialCube, GLuint sphere, float x, float z, float insideX, float insideZ, int type) {
+AreaConstants drawArea(Shader shader, GLuint initialCube, GLuint sphere, float x, float z, float insideX, float insideZ, int type, int texture, int random3, int random4, int random5) {
 
     // generate random number between 1 and 4
     int random1 = !type ? ((rand() % 4) + 1) : type;
     AreaConstants area;
     if (random1 == 1) {
         // make it a building
-        area = buildBuilding(shader, initialCube, x, z, insideX, insideZ);
+        area = buildBuilding(shader, initialCube, x, z, insideX, insideZ, texture, random3, random4, random5);
     } else if (random1 == 2) {
         // make it a shop
-        area = buildShops(shader, initialCube, x, z, insideX, insideZ);
+        area = buildShops(shader, initialCube, x, z, insideX, insideZ, texture, random3, random4, random5);
     } else if (random1 == 3) {
-        area = buildScrapers(shader, initialCube, x, z, insideX, insideZ);
+        area = buildScrapers(shader, initialCube, x, z, insideX, insideZ, texture, random3, random4, random5);
     } else if (random1 == 4) {
-        area = buildFountain(shader, initialCube, sphere, x, z, insideX, insideZ);
+        area = buildFountain(shader, initialCube, sphere, x, z, insideX, insideZ, texture, random3, random4, random5);
     }
 
     return area;
@@ -276,7 +277,11 @@ void buildBackground(Shader &shader, GLuint blueBigCube, float x, float z) {
 
 }
 
-AreaConstants buildBuilding(Shader &shader, GLuint initialCube, float x, float z, float insideX, float insideZ) {
+AreaConstants buildBuilding(Shader &shader, GLuint initialCube, float x, float z, float insideX, float insideZ, int texture, int random3, int random4, int random5) {
+
+    int randomTexture = !texture ? ((rand() % 4) + 1) : texture;
+
+
     glBindVertexArray(initialCube);// CUBE BASE
     //Builds Building
     translateMatrix = translate(mat4(1.0f), vec3(insideX + x, 20.0f, insideZ + z));
@@ -284,11 +289,11 @@ AreaConstants buildBuilding(Shader &shader, GLuint initialCube, float x, float z
     modelMatrix = translateMatrix * scaleMatrix;
     shader.setMat4("modelMatrix", modelMatrix);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, buildingTextures[0]);
+    glBindTexture(GL_TEXTURE_2D, buildingTextures[randomTexture-1]);
     glDrawArrays(GL_TRIANGLES, 0, 36);
 
     //building antenna
-    translateMatrix = translate(mat4(1.0f), vec3(insideX + x, 24.0f, insideZ + z));
+    translateMatrix = translate(mat4(1.0f), vec3(insideX + x, 43.0f, insideZ + z));
     scaleMatrix = scale(mat4(1.0f), vec3(10.0f, 4.0f, 0.1f));
     modelMatrix = translateMatrix * scaleMatrix;
     shader.setMat4("modelMatrix", modelMatrix);
@@ -296,20 +301,24 @@ AreaConstants buildBuilding(Shader &shader, GLuint initialCube, float x, float z
     glBindTexture(GL_TEXTURE_2D, antennaTexture);
     glDrawArrays(GL_TRIANGLES, 0, 36);
 
-    return AreaConstants{1, 0, 0, 0, 0};
+    return AreaConstants{1, randomTexture, 0, 0, 0};
 }
 //this builds the main buildings in the center
-AreaConstants buildScrapers(Shader &shader, GLuint initialCube, float x, float z, float insideX, float insideZ) {
+AreaConstants buildScrapers(Shader &shader, GLuint initialCube, float x, float z, float insideX, float insideZ, int texture, int random3, int random4, int random5) {
+
+    int randomTexture = !texture ? ((rand() % 6) + 1) : texture;
+
+
     glBindVertexArray(initialCube);// CUBE BASE
     translateMatrix = translate(mat4(1.0f), vec3(insideX + x, 40.0f, insideZ + z));
     scaleMatrix = scale(mat4(1.0f), vec3(25.0f, 40.0f, 25.0f));
     modelMatrix = translateMatrix * scaleMatrix;
     shader.setMat4("modelMatrix", modelMatrix);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, scraperTextures[0]);
+    glBindTexture(GL_TEXTURE_2D, scraperTextures[ (randomTexture-1) % 6]);
     glDrawArrays(GL_TRIANGLES, 0, 36);
 
-    return AreaConstants{2, 0, 0, 0, 0};
+    return AreaConstants{2, randomTexture, 0, 0, 0};
 }
 void buildTree(Shader &shader, GLuint initialCube, float x, float z) {
     glBindVertexArray(initialCube);// CUBE BASE
@@ -333,6 +342,7 @@ void buildTree(Shader &shader, GLuint initialCube, float x, float z) {
         glDrawArrays(GL_TRIANGLES, 0, 36);
     }
 }
+
 void buildStreetAndDecor(Shader &shader, GLuint initialCube, GLuint sphere, float x, float z) {
     // this builds the street
     for (int i = 0; i < 2; i++) {
@@ -368,7 +378,7 @@ void buildStreetAndDecor(Shader &shader, GLuint initialCube, GLuint sphere, floa
     shader.setMat4("modelMatrix", modelMatrix);
     glDrawArrays(GL_TRIANGLES, 0, 36);
 
-    translateMatrix = translate(mat4(1.0f), vec3(0.0f + x, -0.01f, -25.0f + x));
+    translateMatrix = translate(mat4(1.0f), vec3(0.0f + x, -0.01f, -25.0f + z));
     scaleMatrix = scale(mat4(1.0f), vec3(10.0f, 0.0f, 100.0f));
     rotateMatrix = rotate(mat4(1.0f), radians(90.0f), vec3(0.0f, 1.0f, 0.0f));
     modelMatrix = translateMatrix * rotateMatrix * scaleMatrix;
@@ -491,26 +501,32 @@ void buildStreetAndDecor(Shader &shader, GLuint initialCube, GLuint sphere, floa
     glDrawArrays(GL_TRIANGLES, 0, 36);
 }
 
-AreaConstants buildShops(Shader &shader, GLuint initialCube, float x, float z, float insideX, float insideZ) {
+AreaConstants buildShops(Shader &shader, GLuint initialCube, float x, float z, float insideX, float insideZ, int texture, int random3, int random4, int random5) {
+
+    int randomTexture = !texture ? ((rand() % 8) + 1) : texture;
+
     translateMatrix = translate(mat4(1.0f), vec3(insideX + x, 7.0f, insideZ + z));
     scaleMatrix = scale(mat4(1.0f), vec3(12.5f, 7.0f, 32.0f));
     modelMatrix = translateMatrix * scaleMatrix;
     shader.setMat4("modelMatrix", modelMatrix);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, shopTextures[0]);
+    glBindTexture(GL_TEXTURE_2D, shopTextures[randomTexture - 1]);
     glDrawArrays(GL_TRIANGLES, 0, 36);
     translateMatrix = translate(mat4(1.0f), vec3(insideX - 7.5f + x, 7.0f, insideZ + z));
     scaleMatrix = scale(mat4(1.0f), vec3(12.5f, 7.0f, 32.0f));
     modelMatrix = translateMatrix * scaleMatrix;
     shader.setMat4("modelMatrix", modelMatrix);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, shopTextures[0]);
+    glBindTexture(GL_TEXTURE_2D, shopTextures[randomTexture % 8]);
     glDrawArrays(GL_TRIANGLES, 0, 36);
 
-    return AreaConstants{3, 0, 0, 0, 0};
+    return AreaConstants{3, randomTexture, 0, 0, 0};
 
 }
-AreaConstants buildFountain(Shader &shader, GLuint initialCube, GLuint sphere, float x, float z, float insideX, float insideZ) {
+AreaConstants buildFountain(Shader &shader, GLuint initialCube, GLuint sphere, float x, float z, float insideX, float insideZ, int texture, int random3, int random4, int random5) {
+
+    int randomTexture = !texture ? 3 : texture;
+
 
     float time = glfwGetTime() * 5; // Get the current time
     float xOffset = sin(time) * 0.3f;
@@ -527,7 +543,7 @@ AreaConstants buildFountain(Shader &shader, GLuint initialCube, GLuint sphere, f
     // animating water
     glBindVertexArray(sphere);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, fountainTextures[2]);
+    glBindTexture(GL_TEXTURE_2D, fountainTextures[randomTexture-1]);
     translateMatrix = translate(mat4(1.0f), vec3(insideX - xOffset + x, 3.99f, insideZ + zOffset + z));
     scaleMatrix = scale(mat4(1.0f), vec3(23.0f, 0.1f, 23.0f));
     modelMatrix = translateMatrix * scaleMatrix;
@@ -556,13 +572,13 @@ AreaConstants buildFountain(Shader &shader, GLuint initialCube, GLuint sphere, f
     glBindVertexArray(initialCube);
     //animating water as squares
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, fountainTextures[2]);
+    glBindTexture(GL_TEXTURE_2D, fountainTextures[randomTexture-1]);
     translateMatrix = translate(mat4(1.0f), vec3(insideX + x, 3.998f, insideZ + z));
     scaleMatrix = scale(mat4(1.0f), vec3(26.0f, 0.01f, 26.0f));
     modelMatrix = translateMatrix * scaleMatrix;
     shader.setMat4("modelMatrix", modelMatrix);
     glDrawArrays(GL_TRIANGLES, 0, 36);
-    translateMatrix = translate(mat4(1.0f), vec3(12.5f + zOffset + x, 3.996f, insideZ - zOffset + z));
+    translateMatrix = translate(mat4(1.0f), vec3(insideX + zOffset + x, 3.996f, insideZ - zOffset + z));
     scaleMatrix = scale(mat4(1.0f), vec3(23.0f, 0.01f, 23.0f));
     modelMatrix = translateMatrix * scaleMatrix;
     shader.setMat4("modelMatrix", modelMatrix);
@@ -591,7 +607,7 @@ AreaConstants buildFountain(Shader &shader, GLuint initialCube, GLuint sphere, f
         shader.setMat4("modelMatrix", modelMatrix);
         glDrawArrays(GL_TRIANGLES, 0, 36);
     }
-    return AreaConstants{4, 0, 0, 0, 0};
+    return AreaConstants{4, randomTexture, 0, 0, 0};
 }
 
 

@@ -20,10 +20,10 @@
 
 // each variable will store the random variable of the object that was drawn
 struct AreaConstants {
-    // the random variables will be between 0 and 5, and will store the type of area (Building, store, facilities).
-    int random1;
-    // this for texture
-    int random2;
+    // the randomType variable will be between 0 and 4, and will store the type of area (Building, store, facilities).
+    int randomType;
+    // the randomTexture variable, and will store the type of the first object in the area.
+    int randomTexture;
     int random3;
     int random4;
     int random5;
@@ -47,13 +47,13 @@ unsigned int buildTextures();
 
 void drawSquare(Shader shader, GLuint initialCube, GLuint sphere, float x, float z);
 void buildBackground(Shader &shader, GLuint blueBigCube, float x, float z, float insideX, float insideZ);
-AreaConstants buildBuilding(Shader &shader, GLuint initialCube, float x, float z, float insideX, float insideZ);
+AreaConstants buildBuilding(Shader &shader, GLuint initialCube, float x, float z, float insideX, float insideZ, int texture, int random3, int random4, int random5);
 
-AreaConstants buildScrapers(Shader &shader, GLuint initialCube, float x, float z, float insideX, float insideZ);
+AreaConstants buildScrapers(Shader &shader, GLuint initialCube, float x, float z, float insideX, float insideZ, int texture, int random3, int random4, int random5);
 void buildTree(Shader &shader, GLuint initialCube, float x, float z);
 void buildStreetAndDecor(Shader &shader, GLuint initialCube, GLuint sphere, float x, float z);
-AreaConstants buildShops(Shader &shader, GLuint initialCube, float x, float z, float insideX, float insideZ);
-AreaConstants buildFountain(Shader &shader, GLuint initialCube, GLuint sphere, float x, float z, float insideX, float insideZ);
+AreaConstants buildShops(Shader &shader, GLuint initialCube, float x, float z, float insideX, float insideZ, int texture, int random3, int random4, int random5);
+AreaConstants buildFountain(Shader &shader, GLuint initialCube, GLuint sphere, float x, float z, float insideX, float insideZ, int texture, int random3, int random4, int random5);
 void buildPeople(Shader &shader, GLuint initialCube, float x, float z, float insideX, float insideZ);
 
 void setShaderValues(Shader &shader);
@@ -62,6 +62,6 @@ void buildLightCube(Shader &shader, GLuint sphere);
 
 bool collisionDetection();
 
-AreaConstants drawArea(Shader shader, GLuint initialCube, GLuint sphere, float x, float z, float insideX, float insideZ, int type);
+AreaConstants drawArea(Shader shader, GLuint initialCube, GLuint sphere, float x, float z, float insideX, float insideZ, int type, int texture, int random3, int random4, int random5);
 
 #endif //OPENGL_COMP371_PROJECT_BACKEND_H
