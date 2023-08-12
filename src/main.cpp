@@ -53,7 +53,7 @@ struct Location {
 };
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
-void drawScene(Shader shader, GLuint initialCube, GLuint blueBigCube, GLuint sphere);
+void drawScene(Shader shader, GLuint initialCube, GLuint sphere);
 Position newSquarePosition(vec3 cameraPosition);
 void addNewLocations();
 hasSides findNeighboringSides(Position newPosition);
@@ -282,7 +282,7 @@ int main() {
             depthShader.setMat4("shadowMatrices[" + std::to_string(i) + "]", shadowTransforms[i]);
         depthShader.setFloat("far_plane", far_plane);
         depthShader.setVec3("lightPos", lightPos);
-        drawScene(shader, initialCube, blueBigCube, sphere);
+        drawScene(shader, initialCube, sphere);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -304,7 +304,7 @@ int main() {
         glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubemap);
 
-        drawScene(shader, initialCube, blueBigCube, sphere);
+        drawScene(shader, initialCube, sphere);
         buildLightCube(lightCubeShader, sphere);
 
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -319,10 +319,10 @@ int main() {
 }
 
 
-void drawScene(Shader shader, GLuint initialCube, GLuint blueBigCube, GLuint sphere) {
+void drawScene(Shader shader, GLuint initialCube, GLuint sphere) {
 
     for (int i = 0; i < squareLocations.size(); i++) {
-        drawSquare(shader, initialCube, blueBigCube, sphere, squareLocations[i].position.x, squareLocations[i].position.z);
+        drawSquare(shader, initialCube, sphere, squareLocations[i].position.x, squareLocations[i].position.z);
     }
 }
 
