@@ -62,6 +62,11 @@ mat4 modelMatrix;
 
 // now we need to keep track of the already drawn objects so that the scene does not get
 // changed every second
+
+/**
+ * this struct will be used to save the positions of the already drawn squares
+ * the bool operator< is used to compare the positions of the squares
+ */
 struct Position {
     float x;
     float z;
@@ -74,7 +79,11 @@ struct Position {
 
 };
 
-
+/**
+ * this is a very important map that will store the positions of the squares that have already been drawn
+ * it saves the position of the square as a key, and the random values generated the first time as the value
+ *
+ */
 map<Position, SquareConstants> drawnSquares;
 
 // textures variables
@@ -98,7 +107,10 @@ glm::vec3 pointLightPositions[] = {
 bool isNight = false;
 bool isSpotLightOn = false;
 
-
+/**
+ * this function draws 1 square depending of the x and z parameters passed to it.
+ * it can call drawArea function to draw the 4 areas inside the square randomly or using already generated values from the drawnSquares map.
+ */
 void drawSquare(Shader shader, GLuint initialCube, GLuint sphere, float x, float z) {
 
     buildTree(shader, initialCube, x, z);
@@ -120,6 +132,15 @@ void drawSquare(Shader shader, GLuint initialCube, GLuint sphere, float x, float
 
 }
 
+/**
+ * this function draws the 1 area inside the square depending on the insideX and insideZ parameters passed to it.
+ * @param x the location of the square on the x axis
+ * @param z the location of the square on the z axis
+ * @param insideX the location of the area inside the square on the x axis
+ * @param insideZ the location of the area inside the square on the z axis
+ * @param type if type is 0, then it will generate a random number between 1 and 4, if it is not 0, then it will use the type passed to it as the type of the area (building, shop, etc...)
+ * @return the random values generated for the area so that we can save them in the drawnSquares map
+ */
 AreaConstants drawArea(Shader shader, GLuint initialCube, GLuint sphere, float x, float z, float insideX, float insideZ, int type) {
 
     // generate random number between 1 and 4
@@ -198,7 +219,10 @@ GLuint loadTexture(const char* filename) {
     return textureId;
 }
 
-
+/**
+ * this function simply loads all the textures
+ * @return the background texture as a default texture.
+ */
 unsigned int buildTextures() {
     buildingTextures[0] = loadTexture("rec/textures/building.png");buildingTextures[1] = loadTexture("rec/textures/buildingB.png");
     buildingTextures[2] = loadTexture("rec/textures/buildingC.png");buildingTextures[3] = loadTexture("rec/textures/buildingD.png");
@@ -251,6 +275,7 @@ void buildBackground(Shader &shader, GLuint blueBigCube, float x, float z) {
     glEnable(GL_CULL_FACE);
 
 }
+
 AreaConstants buildBuilding(Shader &shader, GLuint initialCube, float x, float z, float insideX, float insideZ) {
     glBindVertexArray(initialCube);// CUBE BASE
     //Builds Building
@@ -581,6 +606,7 @@ void buildPeople(Shader &shader, GLuint initialCube, float x, float z){
     glActiveTexture(GL_TEXTURE0);glBindTexture(GL_TEXTURE_2D, peopleTextures[0]);
     glDrawArrays(GL_TRIANGLES, 0, 36);
 }
+
 void buildLightCube(Shader &shader, GLuint sphere) {
 
     glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 1000.0f);

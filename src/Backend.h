@@ -29,6 +29,9 @@ struct AreaConstants {
     int random5;
 };
 
+/**
+ * this will store the random variables of all the areas combined, meaning that all 4 areas inside 1 square.
+ */
 struct SquareConstants {
     AreaConstants area1;
     AreaConstants area2;
