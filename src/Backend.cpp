@@ -116,6 +116,7 @@ void drawSquare(Shader shader, GLuint initialCube, GLuint sphere, float x, float
 
     buildTree(shader, initialCube, x, z);
     buildStreetAndDecor(shader, initialCube, sphere, x, z);
+    buildLightCube(shader,sphere,x,z);
 
     if (drawnSquares.find(Position{x, z}) != drawnSquares.end()) {
         // square is found
@@ -633,7 +634,7 @@ AreaConstants buildFountain(Shader &shader, GLuint initialCube, GLuint sphere, f
 
 
 
-void buildLightCube(Shader &shader, GLuint sphere) {
+void buildLightCube(Shader &shader, GLuint sphere,float x,float z) {
 
     glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 1000.0f);
     glm::mat4 view = camera.GetViewMatrix();
@@ -652,23 +653,25 @@ void buildLightCube(Shader &shader, GLuint sphere) {
     glBindVertexArray(sphere);
     glDrawElements(GL_TRIANGLES, vertexCount ,GL_UNSIGNED_INT,(void*)0);
 
-    //////////////// 2 //////////////
-    model = glm::mat4(1.0f);
-    model = glm::translate(model, pointLightPositions[0]);
-    model = glm::scale(model, glm::vec3(1.0f)); // a smaller cube
-    shader.setMat4("model", model);
+    for(int i=0;i<8;i++){
+        model = glm::mat4(1.0f);
+        //Inner lights
+        if(i==0){model = glm::translate(model, vec3(3+ x, 10.0, 1.50 + z));}
+        if(i==1){model = glm::translate(model, vec3(-3+ x, 10.0, 1.50 + z));}
+        if(i==2){model = glm::translate(model, vec3(3+ x, 10.0, -1.50 + z));}
+        if(i==3){model = glm::translate(model, vec3(-3+ x, 10.0, -1.50 + z));}
+        //Outer lights
+        if(i==4){model = glm::translate(model, vec3(3+ x, 10.0, 4.50 + z));}
+        if(i==5){model = glm::translate(model, vec3(-3+ x, 10.0, 4.50 + z));}
+        if(i==6){model = glm::translate(model, vec3(3+ x, 10.0, -4.50 + z));}
+        if(i==7){model = glm::translate(model, vec3(-3+ x, 10.0, -4.50 + z));}
+        model = glm::scale(model, glm::vec3(0.25f, 0.15f, 0.25f)); // a smaller cube
+        shader.setMat4("model", model);
 
-    glBindVertexArray(sphere);
-    glDrawElements(GL_TRIANGLES, vertexCount ,GL_UNSIGNED_INT,(void*)0);
+        glBindVertexArray(sphere);
+        glDrawElements(GL_TRIANGLES, vertexCount ,GL_UNSIGNED_INT,(void*)0);
+    }
 
-    //////////////// 3 //////////////
-    model = glm::mat4(1.0f);
-    model = glm::translate(model, pointLightPositions[1]);
-    model = glm::scale(model, glm::vec3(1.0f)); // a smaller cube
-    shader.setMat4("model", model);
-
-    glBindVertexArray(sphere);
-    glDrawElements(GL_TRIANGLES, vertexCount ,GL_UNSIGNED_INT,(void*)0);
 }
 
 bool collisionDetection() {

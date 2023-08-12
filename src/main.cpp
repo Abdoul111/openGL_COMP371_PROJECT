@@ -328,7 +328,7 @@ int main() {
 
         // the drawScene function draws the all the squares in the world
         drawScene(shader, initialCube, sphere);
-        buildLightCube(lightCubeShader, sphere);
+        buildLightCube(lightCubeShader, sphere,0,0);
 
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         // End Frame

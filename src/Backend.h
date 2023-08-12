@@ -58,7 +58,7 @@ void buildPeople(Shader &shader, GLuint initialCube, float x, float z, float ins
 
 void setShaderValues(Shader &shader);
 
-void buildLightCube(Shader &shader, GLuint sphere);
+void buildLightCube(Shader &shader, GLuint sphere,float x, float z);
 
 bool collisionDetection();
 
