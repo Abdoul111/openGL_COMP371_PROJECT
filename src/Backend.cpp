@@ -91,7 +91,8 @@ unsigned int buildingTextures[4];unsigned int balloonTextures[2];unsigned int sh
 unsigned int fountainTextures[3];unsigned int peopleTextures[8];
 unsigned int backgroundTexture;unsigned int treesTexture[2];unsigned int woodTexture;unsigned int streetTexture;
 unsigned int floorTexture;unsigned int firehydrantTexture;unsigned int stopTexture;
-unsigned int signsTexture[5];unsigned int antennaTexture;
+unsigned int signsTexture[5];unsigned int antennaTexture;unsigned int lightTexture[2];
+
 
 // light sphere constants:
 // light sphere
@@ -252,6 +253,8 @@ unsigned int buildTextures() {
     peopleTextures[2] = loadTexture("rec/textures/timemployee.png");peopleTextures[3] = loadTexture("rec/textures/SBemployee.png");
     peopleTextures[4] = loadTexture("rec/textures/fireman.png"); peopleTextures[5] = loadTexture("rec/textures/electrician.png");
     peopleTextures[6] = loadTexture("rec/textures/officer.png");peopleTextures[7] = loadTexture("rec/textures/banker.png");
+    lightTexture[0]=loadTexture("rec/textures/lightpole.png");lightTexture[1]=loadTexture("rec/textures/lightpole2.png");
+
 
     return backgroundTexture;
 }
@@ -436,36 +439,24 @@ void buildStreetAndDecor(Shader &shader, GLuint initialCube, GLuint sphere, floa
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, stopTexture);
         glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        //this builds people
+        translateMatrix = translate(mat4(1.0f), vec3(-3.0f + x, 2.0f, 6.0f + z));scaleMatrix = scaleMatrix = scale(mat4(1.0f), vec3(0.1f, 2.0f, 3.0f));
+        modelMatrix = translateMatrix * scaleMatrix;shader.setMat4("modelMatrix", modelMatrix);
+        glActiveTexture(GL_TEXTURE0);glBindTexture(GL_TEXTURE_2D, peopleTextures[0]);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        translateMatrix = translate(mat4(1.0f), vec3(-3.0f + x, 2.0f, -6.0f + z));scaleMatrix = scaleMatrix = scale(mat4(1.0f), vec3(0.1f, 2.0f, 3.0f));
+        modelMatrix = translateMatrix * scaleMatrix;shader.setMat4("modelMatrix", modelMatrix);
+        glActiveTexture(GL_TEXTURE0);glBindTexture(GL_TEXTURE_2D, peopleTextures[0]);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
     }
-    // this builds the stop signs
 
-    /*
-
-    translateMatrix = translate(mat4(1.0f), vec3(0.0f + x, 8.0f, 0.0f + z));
-    scaleMatrix = scale(mat4(1.0f), vec3(0.5f, 8.0f, 5.0f));
-    modelMatrix = translateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, firehydrantTexture);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-
-     */
 
     //this draws the balloon
     float time = glfwGetTime(); // Get the current time
     float yOffset = cos(time) * 45.0f;
     translateMatrix = translate(mat4(1.0f), vec3(90.0f + x, 90.0f + yOffset, 0.0f + z));
     scaleMatrix = scale(mat4(1.0f), vec3(15.0f, 5.0f, 15.0f));
-    modelMatrix = translateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, balloonTextures[0]);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-
-    // testing drawing a sphere
-    //////////////// 1 //////////////
-    translateMatrix = translate(mat4(1.0f), vec3(0.0f + x, 50.0f, 20.0f + z));
-    scaleMatrix = scale(mat4(1.0f), vec3(20.0f, 5.0f, 20.0f));
     modelMatrix = translateMatrix * scaleMatrix;
     shader.setMat4("modelMatrix", modelMatrix);
     glActiveTexture(GL_TEXTURE0);
@@ -484,8 +475,8 @@ void buildStreetAndDecor(Shader &shader, GLuint initialCube, GLuint sphere, floa
     // this draws the welcome sign
     glBindVertexArray(initialCube);
     //sign on blimp
-    translateMatrix = translate(mat4(1.0f), vec3( yOffset-31 + x, 100.0f, 0.0f + z));
-    scaleMatrix = scale(mat4(1.0f), vec3(50.0f, 2.0f, 0.1f));
+    translateMatrix = translate(mat4(1.0f), vec3( yOffset-27 + x, 100.0f, 0.0f + z));
+    scaleMatrix = scale(mat4(1.0f), vec3(20.0f, 2.0f, 0.1f));
     modelMatrix = translateMatrix * scaleMatrix;
     shader.setMat4("modelMatrix", modelMatrix);
     glActiveTexture(GL_TEXTURE0);
@@ -499,6 +490,33 @@ void buildStreetAndDecor(Shader &shader, GLuint initialCube, GLuint sphere, floa
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, signsTexture[4]);
     glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    //THIS DRAWS THE LIGHTS base
+    for(int i =0;i<4;i++) {
+        if(i==0){translateMatrix = translate(mat4(1.0f), vec3(3 + x, 5, 3 + z));}
+        if(i==1){translateMatrix = translate(mat4(1.0f), vec3(-3 + x, 5, 3 + z));}
+        if(i==2){translateMatrix = translate(mat4(1.0f), vec3(3 + x, 5, -3 + z));}
+        if(i==3){translateMatrix = translate(mat4(1.0f), vec3(-3 + x, 5, -3 + z));}
+        scaleMatrix = scale(mat4(1.0f), vec3(1.25f, 5.0f, 1.25f));
+        modelMatrix = translateMatrix * scaleMatrix;
+        shader.setMat4("modelMatrix", modelMatrix);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, lightTexture[0]);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+    //THIS DRAWS THE LIGHT top
+    for(int i =0;i<4;i++) {
+        if(i==0){translateMatrix = translate(mat4(1.0f), vec3(3+ x, 10.15, 3 + z));}
+        if(i==1){translateMatrix = translate(mat4(1.0f), vec3(-3 + x, 10.15, 3 + z));}
+        if(i==2){translateMatrix = translate(mat4(1.0f), vec3(3 + x, 10.15, -3 + z));}
+        if(i==3){translateMatrix = translate(mat4(1.0f), vec3(-3 + x, 10.15, -3 + z));}
+        scaleMatrix = scale(mat4(1.0f), vec3(1.25f, 0.15f, 7.0f));
+        modelMatrix = translateMatrix * scaleMatrix;
+        shader.setMat4("modelMatrix", modelMatrix);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, lightTexture[1]);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
 }
 
 AreaConstants buildShops(Shader &shader, GLuint initialCube, float x, float z, float insideX, float insideZ, int texture, int random3, int random4, int random5) {
@@ -519,6 +537,8 @@ AreaConstants buildShops(Shader &shader, GLuint initialCube, float x, float z, f
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, shopTextures[randomTexture % 8]);
     glDrawArrays(GL_TRIANGLES, 0, 36);
+
+
 
     return AreaConstants{3, randomTexture, 0, 0, 0};
 
@@ -564,7 +584,7 @@ AreaConstants buildFountain(Shader &shader, GLuint initialCube, GLuint sphere, f
     modelMatrix = translateMatrix * scaleMatrix;
     shader.setMat4("modelMatrix", modelMatrix);
     glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, (void *) 0);
-    translateMatrix = translate(mat4(1.0f), vec3(insideX - xOffset + x, 3.99f, -12.0f + xOffset + z));
+    translateMatrix = translate(mat4(1.0f), vec3(insideX - xOffset + x, 3.99f, insideZ + xOffset + z));
     scaleMatrix = scale(mat4(1.0f), vec3(25.0f, 0.1f, 25.0f));
     modelMatrix = translateMatrix * scaleMatrix;
     shader.setMat4("modelMatrix", modelMatrix);
@@ -611,17 +631,7 @@ AreaConstants buildFountain(Shader &shader, GLuint initialCube, GLuint sphere, f
 }
 
 
-void buildPeople(Shader &shader, GLuint initialCube, float x, float z){
-    glBindVertexArray(initialCube);
-    translateMatrix = translate(mat4(1.0f), vec3(-3.0f + x, 2.0f, 6.0f + z));scaleMatrix = scaleMatrix = scale(mat4(1.0f), vec3(0.1f, 2.0f, 3.0f));
-    modelMatrix = translateMatrix * scaleMatrix;shader.setMat4("modelMatrix", modelMatrix);
-    glActiveTexture(GL_TEXTURE0);glBindTexture(GL_TEXTURE_2D, peopleTextures[0]);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-    translateMatrix = translate(mat4(1.0f), vec3(-3.0f + x, 2.0f, -6.0f + z));scaleMatrix = scaleMatrix = scale(mat4(1.0f), vec3(0.1f, 2.0f, 3.0f));
-    modelMatrix = translateMatrix * scaleMatrix;shader.setMat4("modelMatrix", modelMatrix);
-    glActiveTexture(GL_TEXTURE0);glBindTexture(GL_TEXTURE_2D, peopleTextures[0]);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-}
+
 
 void buildLightCube(Shader &shader, GLuint sphere) {
 
