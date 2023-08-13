@@ -535,22 +535,27 @@ void buildStreetAndDecor(Shader &shader, GLuint initialCube, GLuint sphere, floa
 
 
     //THIS DRAWS THE LIGHTS base
-    translateMatrix = translate(mat4(1.0f), vec3(3 + x, 5, 3 + z));
-    scaleMatrix = scale(mat4(1.0f), vec3(1.25f, 5.0f, 1.25f));
-    modelMatrix = translateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, lightTexture[0]);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-
+    for(int i =0;i<2;i++) {
+        if(i==0){translateMatrix = translate(mat4(1.0f), vec3(3 + x, 5, 3 + z));}
+        if(i==1){translateMatrix = translate(mat4(1.0f), vec3(3 + x, 5, -3 + z));}
+        scaleMatrix = scale(mat4(1.0f), vec3(1.25f, 5.0f, 1.25f));
+        modelMatrix = translateMatrix * scaleMatrix;
+        shader.setMat4("modelMatrix", modelMatrix);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, lightTexture[0]);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
     //THIS DRAWS THE LIGHT top
-    translateMatrix = translate(mat4(1.0f), vec3(3+ x, 10.15, 3 + z));
-    scaleMatrix = scale(mat4(1.0f), vec3(1.25f, 0.15f, 7.0f));
-    modelMatrix = translateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, lightTexture[1]);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
+    for(int i =0;i<2;i++) {
+        if(i==0){translateMatrix = translate(mat4(1.0f), vec3(3+ x, 10.15, 3 + z));}
+        if(i==1){translateMatrix = translate(mat4(1.0f), vec3(3 + x, 10.15, -3 + z));}
+        scaleMatrix = scale(mat4(1.0f), vec3(1.25f, 0.15f, 7.0f));
+        modelMatrix = translateMatrix * scaleMatrix;
+        shader.setMat4("modelMatrix", modelMatrix);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, lightTexture[1]);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
 }
 
 AreaConstants buildShops(Shader &shader, GLuint initialCube, float x, float z, float insideX, float insideZ, int texture, int random3, int random4, int random5) {
@@ -689,18 +694,27 @@ void buildLightCube(Shader &shader, GLuint sphere,float x,float z) {
     model = glm::mat4(1.0f);
     //Inner lights
     vec3 position = vec3(3+ x, 10.0, 1.50 + z);
-    model = glm::translate(model, position);
     // adding the position to the vector
     if (std::find(pointLightPositions.begin(), pointLightPositions.end(), position) == pointLightPositions.end()) {
         // not found
         pointLightPositions.push_back(position);
     }
 
-    model = glm::scale(model, glm::vec3(0.25f, 0.15f, 0.25f)); // a smaller cube
-    shader.setMat4("model", model);
+    for(int i=0;i<4;i++){
+        model = glm::mat4(1.0f);
+        //Inner lights
+        if(i==0){model = glm::translate(model, vec3(3+ x, 10.0, 1.50 + z));}
+        if(i==1){model = glm::translate(model, vec3(3+ x, 10.0, -1.50 + z));}
+        //Outer lights
+        if(i==2){model = glm::translate(model, vec3(3+ x, 10.0, 4.50 + z));}
+        if(i==3){model = glm::translate(model, vec3(3+ x, 10.0, -4.50 + z));}
 
-    glBindVertexArray(sphere);
-    glDrawElements(GL_TRIANGLES, vertexCount ,GL_UNSIGNED_INT,(void*)0);
+        model = glm::scale(model, glm::vec3(0.25f, 0.15f, 0.25f)); // a smaller cube
+        shader.setMat4("model", model);
+
+        glBindVertexArray(sphere);
+        glDrawElements(GL_TRIANGLES, vertexCount ,GL_UNSIGNED_INT,(void*)0);
+    }
 
 }
 
