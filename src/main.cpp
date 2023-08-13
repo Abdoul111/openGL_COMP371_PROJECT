@@ -97,6 +97,8 @@ extern vec3 pointLightPositions[];
 extern bool isNight;
 extern bool isSpotLightOn;
 
+bool isYAxisActive = false;
+
 
 // here we define the preloaded squares in the world. (at the beginning we have 5 squares)
 Location squareLocation = {0.0f, 0.0f, true, true, true, true};
@@ -283,7 +285,6 @@ int main() {
 
         // the drawScene function draws the all the squares in the world
         drawScene(shader, lightCubeShader, initialCube, sphere);
-        //buildLightCube(lightCubeShader, sphere,0,0);
 
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         // End Frame
@@ -314,10 +315,19 @@ bool cameraInsideCurrentSquare() {
            && camera.Position.x >= currentSquareLocation.position.x - 25.0f && camera.Position.x <= currentSquareLocation.position.x + 25.0f;
 }
 
+bool cameraNotInsideArea() {
+    return true;
+}
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+
+    if (glfwGetKey(window, GLFW_KEY_Y) == GLFW_PRESS) {
+        isYAxisActive = !isYAxisActive;
+    }
+
+
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        camera.ProcessKeyboard(FORWARD, deltaTime); // move forward 1 unite
+        camera.ProcessKeyboard(FORWARD, deltaTime, isYAxisActive); // move forward 1 unite
 
         if (!cameraInsideCurrentSquare()) {
              Position newCurrentPosition = newSquarePosition(camera.Position);
@@ -332,7 +342,7 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         }
     }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        camera.ProcessKeyboard(BACKWARD, deltaTime);
+        camera.ProcessKeyboard(BACKWARD, deltaTime, isYAxisActive);
         if (!cameraInsideCurrentSquare()) {
             Position newCurrentPosition = newSquarePosition(camera.Position);
             neighboringSides sides = findNeighboringSides(newCurrentPosition);
@@ -346,7 +356,7 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         }
     }
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        camera.ProcessKeyboard(LEFT, deltaTime);
+        camera.ProcessKeyboard(LEFT, deltaTime, isYAxisActive);
         if (!cameraInsideCurrentSquare()) {
             Position newCurrentPosition = newSquarePosition(camera.Position);
             neighboringSides sides = findNeighboringSides(newCurrentPosition);
@@ -360,7 +370,7 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         }
     }
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        camera.ProcessKeyboard(RIGHT, deltaTime);
+        camera.ProcessKeyboard(RIGHT, deltaTime, isYAxisActive);
         if (!cameraInsideCurrentSquare()) {
             Position newCurrentPosition = newSquarePosition(camera.Position);
             neighboringSides sides = findNeighboringSides(newCurrentPosition);
