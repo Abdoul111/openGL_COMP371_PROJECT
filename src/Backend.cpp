@@ -278,26 +278,6 @@ unsigned int buildTextures() {
     return backgroundTexture;
 }
 
-void buildBackground(Shader &shader, GLuint blueBigCube, float x, float z) {
-    glBindVertexArray(blueBigCube);// Big Blue Cube
-    translateMatrix = translate(mat4(1.0f), vec3(0.0f + x, 69.8f, 0.0f + z));
-    rotateMatrix = rotate(mat4(1.0f), radians(0.0f), vec3(0.0f, 0.0f, 1.0f));
-    scaleMatrix = scale(mat4(1.0f), vec3(500.0f, 70.0f, 500.0f));
-    modelMatrix = translateMatrix * rotateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    //shader.setVec3("color", 129.0f/255, 174.0f/255, 208.0f/255);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, backgroundTexture);
-    // bind specular map
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, backgroundTexture);
-    glDisable(GL_CULL_FACE);
-    shader.setInt("reverse_normals", 1);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-    shader.setInt("reverse_normals", 0);
-    glEnable(GL_CULL_FACE);
-}
-
 AreaConstants buildBuilding(Shader &shader, GLuint initialCube, float x, float z, float insideX, float insideZ, int texture, int random3, int random4, int random5) {
 
     int randomTexture = !texture ? ((rand() % 4) + 1) : texture;
@@ -596,7 +576,7 @@ AreaConstants buildShops(Shader &shader, GLuint initialCube, float x, float z, f
 AreaConstants buildFountain(Shader &shader, GLuint initialCube, GLuint sphere, float x, float z, float insideX, float insideZ, int texture, int random3, int random4, int random5) {
 
     // the next variable decides if we draw a fountain, a playground or a garden
-    int randomSpecificType = !random3 ? ((rand() % 3) + 1) : random3;
+    int randomSpecificType = !random3 ? ((rand() % 2) + 1) : random3;
     // this builds a fountain
     if (randomSpecificType == 1) {
         float time = glfwGetTime() * 5; // Get the current time

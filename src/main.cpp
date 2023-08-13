@@ -228,6 +228,7 @@ int main() {
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
+        cout << "delta time: " << deltaTime << endl;
         //lightPos.z = static_cast<float>(sin(glfwGetTime() * 0.5) * 30.0);
 
         // render
@@ -329,6 +330,7 @@ bool cameraInsideArea(int areaNumber) {
         float zMin;
         float zMax;
     };
+
     Limits limits[4] {
             {currentSquareLocation.position.x + 5, currentSquareLocation.position.x + 20, currentSquareLocation.position.z + 5, currentSquareLocation.position.z + 20},
             {currentSquareLocation.position.x - 20, currentSquareLocation.position.x - 5, currentSquareLocation.position.z + 5, currentSquareLocation.position.z + 20},
