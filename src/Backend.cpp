@@ -91,7 +91,7 @@ unsigned int buildingTextures[4];unsigned int balloonTextures[2];unsigned int sh
 unsigned int fountainTextures[3];unsigned int peopleTextures[8];
 unsigned int backgroundTexture;unsigned int treesTexture[2];unsigned int woodTexture;unsigned int streetTexture;
 unsigned int floorTexture;unsigned int firehydrantTexture;unsigned int stopTexture;
-unsigned int signsTexture[5];unsigned int antennaTexture;unsigned int lightTexture[2];
+unsigned int signsTexture[7];unsigned int antennaTexture;unsigned int lightTexture[2];
 
 
 // light sphere constants:
@@ -116,7 +116,8 @@ void drawSquare(Shader shader, GLuint initialCube, GLuint sphere, float x, float
 
     buildTree(shader, initialCube, x, z);
     buildStreetAndDecor(shader, initialCube, sphere, x, z);
-    buildLightCube(shader,sphere,x,z);
+    // this caused an issue where it would remove an area from being built
+    //buildLightCube(shader,sphere,x,z);
 
     if (drawnSquares.find(Position{x, z}) != drawnSquares.end()) {
         // square is found
@@ -246,7 +247,8 @@ unsigned int buildTextures() {
     balloonTextures[0] = loadTexture("rec/textures/balloon.png");balloonTextures[1] = loadTexture("rec/textures/blimp.png");
     signsTexture[0] = loadTexture("rec/textures/hey.png");signsTexture[1] = loadTexture("rec/textures/adventure.png");
     signsTexture[2] = loadTexture("rec/textures/haveyou.png");signsTexture[3] = loadTexture("rec/textures/visit.png");
-    signsTexture[4] = loadTexture("rec/textures/welcome.png");
+    signsTexture[4] = loadTexture("rec/textures/welcome.png");signsTexture[5] = loadTexture("rec/textures/hicham.png");
+    signsTexture[6] = loadTexture("rec/textures/abd.png");
     fountainTextures[0] = loadTexture("rec/textures/fountainbase.png");fountainTextures[1] = loadTexture("rec/textures/fountaintop.png");
     fountainTextures[2] = loadTexture("rec/textures/water.png");
     antennaTexture = loadTexture("rec/textures/antenna.png");
@@ -311,7 +313,8 @@ AreaConstants buildBuilding(Shader &shader, GLuint initialCube, float x, float z
 AreaConstants buildScrapers(Shader &shader, GLuint initialCube, float x, float z, float insideX, float insideZ, int texture, int random3, int random4, int random5) {
 
     int randomTexture = !texture ? ((rand() % 6) + 1) : texture;
-
+    int randomTextureSign = !texture ? ((rand() % 5) + 1) : texture;
+    int randomTexturePeople = !texture ? ((rand() % 8) + 1) : texture;
 
     glBindVertexArray(initialCube);// CUBE BASE
     translateMatrix = translate(mat4(1.0f), vec3(insideX + x, 40.0f, insideZ + z));
@@ -320,6 +323,47 @@ AreaConstants buildScrapers(Shader &shader, GLuint initialCube, float x, float z
     shader.setMat4("modelMatrix", modelMatrix);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, scraperTextures[ (randomTexture-1) % 6]);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    //this builds people
+    translateMatrix = translate(mat4(1.0f), vec3(-3.0f + x, 2.0f, 6.0f + z));scaleMatrix = scaleMatrix = scale(mat4(1.0f), vec3(0.1f, 2.0f, 3.0f));
+    modelMatrix = translateMatrix * scaleMatrix;shader.setMat4("modelMatrix", modelMatrix);
+    glActiveTexture(GL_TEXTURE0);glBindTexture(GL_TEXTURE_2D, peopleTextures[randomTexturePeople-1]);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    translateMatrix = translate(mat4(1.0f), vec3(-3.0f + x, 2.0f, -6.0f + z));scaleMatrix = scaleMatrix = scale(mat4(1.0f), vec3(0.1f, 2.0f, 3.0f));
+    modelMatrix = translateMatrix * scaleMatrix;shader.setMat4("modelMatrix", modelMatrix);
+    glActiveTexture(GL_TEXTURE0);glBindTexture(GL_TEXTURE_2D, peopleTextures[randomTexturePeople%8]);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    //this builds signs
+    translateMatrix = translate(mat4(1.0f), vec3( 6.0f + x, 1.5, -2.5f + z));
+    scaleMatrix = scale(mat4(1.0f), vec3(5.5f, 1.5f, 0.25f));
+    modelMatrix = translateMatrix * scaleMatrix;
+    shader.setMat4("modelMatrix", modelMatrix);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, signsTexture[(randomTextureSign-1) % 4]);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    // This builds abd x hixham street sign
+    translateMatrix = translate(mat4(1.0f), vec3( 8+ x, 8, 4+ z));
+    scaleMatrix = scale(mat4(1.0f), vec3(0.25f, 0.25f, 4.5f));
+    modelMatrix = translateMatrix * scaleMatrix;
+    shader.setMat4("modelMatrix", modelMatrix);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, signsTexture[5]);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    translateMatrix = translate(mat4(1.0f), vec3( 8+ x, 7.55, 4+ z));
+    scaleMatrix = scale(mat4(1.0f), vec3(4.5f, 0.25f, 0.25f));
+    modelMatrix = translateMatrix * scaleMatrix;
+    shader.setMat4("modelMatrix", modelMatrix);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, signsTexture[6]);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    translateMatrix = translate(mat4(1.0f), vec3( 8+ x, 3.0, 4+ z));
+    scaleMatrix = scale(mat4(1.0f), vec3(0.25f, 4.3f, 0.25f));
+    modelMatrix = translateMatrix * scaleMatrix;
+    shader.setMat4("modelMatrix", modelMatrix);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, lightTexture[0]);
     glDrawArrays(GL_TRIANGLES, 0, 36);
 
     return AreaConstants{2, randomTexture, 0, 0, 0};
@@ -441,15 +485,7 @@ void buildStreetAndDecor(Shader &shader, GLuint initialCube, GLuint sphere, floa
         glBindTexture(GL_TEXTURE_2D, stopTexture);
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
-        //this builds people
-        translateMatrix = translate(mat4(1.0f), vec3(-3.0f + x, 2.0f, 6.0f + z));scaleMatrix = scaleMatrix = scale(mat4(1.0f), vec3(0.1f, 2.0f, 3.0f));
-        modelMatrix = translateMatrix * scaleMatrix;shader.setMat4("modelMatrix", modelMatrix);
-        glActiveTexture(GL_TEXTURE0);glBindTexture(GL_TEXTURE_2D, peopleTextures[0]);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-        translateMatrix = translate(mat4(1.0f), vec3(-3.0f + x, 2.0f, -6.0f + z));scaleMatrix = scaleMatrix = scale(mat4(1.0f), vec3(0.1f, 2.0f, 3.0f));
-        modelMatrix = translateMatrix * scaleMatrix;shader.setMat4("modelMatrix", modelMatrix);
-        glActiveTexture(GL_TEXTURE0);glBindTexture(GL_TEXTURE_2D, peopleTextures[0]);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+
     }
 
 
@@ -484,13 +520,7 @@ void buildStreetAndDecor(Shader &shader, GLuint initialCube, GLuint sphere, floa
     glBindTexture(GL_TEXTURE_2D, signsTexture[0]);
     glDrawArrays(GL_TRIANGLES, 0, 36);
 
-    translateMatrix = translate(mat4(1.0f), vec3( 6.0f + x, 1.5, -2.5f + z));
-    scaleMatrix = scale(mat4(1.0f), vec3(5.5f, 1.5f, 0.25f));
-    modelMatrix = translateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, signsTexture[4]);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
+
 
     //THIS DRAWS THE LIGHTS base
     for(int i =0;i<4;i++) {
