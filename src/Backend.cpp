@@ -103,7 +103,7 @@ map<Position, SquareConstants> drawnSquares;
 // textures variables
 unsigned int buildingTextures[4];unsigned int balloonTextures[2];unsigned int shopTextures[8];unsigned int scraperTextures[6];
 unsigned int fountainTextures[3];unsigned int peopleTextures[8];
-unsigned int backgroundTexture;unsigned int treesTexture[2];unsigned int woodTexture;unsigned int streetTexture;
+unsigned int backgroundTexture;unsigned int treesTexture[3];unsigned int woodTexture;unsigned int streetTexture;
 unsigned int floorTexture;unsigned int firehydrantTexture;unsigned int stopTexture;
 unsigned int signsTexture[7];unsigned int antennaTexture;unsigned int lightTexture[2];
 unsigned int playgroundTextures[6];
@@ -262,6 +262,7 @@ unsigned int buildTextures() {
     buildingTextures[2] = loadTexture("rec/textures/buildingC.png");buildingTextures[3] = loadTexture("rec/textures/buildingD.png");
     backgroundTexture = loadTexture("rec/textures/background.png");
     treesTexture[0] = loadTexture("rec/textures/tree.png");treesTexture[1] = loadTexture("rec/textures/tree2.png");
+    treesTexture[2] = loadTexture("rec/textures/tree3.png");
     woodTexture = loadTexture("rec/textures/wood.png");
     streetTexture = loadTexture("rec/textures/street.png");
     floorTexture = loadTexture("rec/textures/brick.jpg");
