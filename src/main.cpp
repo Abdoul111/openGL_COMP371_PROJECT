@@ -92,7 +92,7 @@ extern float deltaTime;
 extern float lastFrame;
 
 // positions of the point lights
-extern vec3 pointLightPositions[];
+extern vector<vec3> pointLightPositions;
 extern float currentSquareAreasHeight[];
 
 extern bool isNight;
@@ -228,7 +228,7 @@ int main() {
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        lightPos.z = static_cast<float>(sin(glfwGetTime() * 0.5) * 30.0);
+        //lightPos.z = static_cast<float>(sin(glfwGetTime() * 0.5) * 30.0);
 
         // render
         // ------
@@ -256,12 +256,18 @@ int main() {
         glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
         glClear(GL_DEPTH_BUFFER_BIT);
         depthShader.use();
-        for (unsigned int i = 0; i < 6; ++i)
-            depthShader.setMat4("shadowMatrices[" + std::to_string(i) + "]", shadowTransforms[i]);
+
+        depthShader.setInt("nrLights", pointLightPositions.size());
+
+        for (int m = 0; m < pointLightPositions.size(); m++) {
+            for (unsigned int i = 0; i < 6; ++i)
+                depthShader.setMat4("shadowMatrices[" + std::to_string(i * m + i) + "]", shadowTransforms[i]);
+
+        }
         depthShader.setFloat("far_plane", far_plane);
         depthShader.setVec3("lightPos", lightPos);
         // the drawScene function draws the all the squares in the world (here we do the shadows)
-        drawScene(shader, lightCubeShader, initialCube, sphere);
+        drawScene(depthShader, lightCubeShader, initialCube, sphere);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -345,6 +351,23 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     if (glfwGetKey(window, GLFW_KEY_Y) == GLFW_PRESS) {
         isYAxisActive = !isYAxisActive;
     }
+
+    if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
+        camera.Position.y = 150.0f;
+        camera.Front = vec3(0.0f, -1.0f, 0.0f);
+        camera.Yaw = 0.0f;
+        camera.Pitch = -90.0f;
+        camera.updateCameraVectors();
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) {
+        camera.Position.y = 6.0f;
+        camera.Yaw = -90.0f;
+        camera.Pitch = 0.0f;
+        camera.updateCameraVectors();
+
+    }
+
 
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {

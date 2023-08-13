@@ -40,28 +40,10 @@ float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
 
-
-struct Wall {
-    float maxX;
-    float maxY;
-    float maxZ;
-    float minX;
-    float minY;
-    float minZ;
-};
-
-
-Wall bigWall = {125.0f, 125.0f, 125.0f,
-                -125.0f, -1.0f, -125.0f};
-
-
 mat4 translateMatrix;
 mat4 rotateMatrix;
 mat4 scaleMatrix;
 mat4 modelMatrix;
-
-// now we need to keep track of the already drawn objects so that the scene does not get
-// changed every second
 
 /**
  * this struct will be used to save the positions of the already drawn squares
@@ -769,18 +751,7 @@ void buildLightCube(Shader &shader, GLuint sphere,float x,float z) {
     shader.use();
     shader.setMat4("projection", projection);
     shader.setMat4("view", view);
-    glm::mat4 model;
-
-    //////////////// 1 //////////////
-    model = glm::mat4(1.0f);
-    model = glm::translate(model, lightPos);
-    model = glm::scale(model, glm::vec3(1.0f)); // a smaller cube
-    shader.setMat4("model", model);
-
-    glBindVertexArray(sphere);
-    glDrawElements(GL_TRIANGLES, vertexCount ,GL_UNSIGNED_INT,(void*)0);
-
-    model = glm::mat4(1.0f);
+    glm::mat4 model = glm::mat4(1.0f);
     //Inner lights
     vec3 position = vec3(3+ x, 10.0, 1.50 + z);
     // adding the position to the vector
@@ -806,12 +777,6 @@ void buildLightCube(Shader &shader, GLuint sphere,float x,float z) {
     }
 
 }
-
-bool collisionDetection() {
-    return true;
-    //(camera.Position.y < bigWall.maxY && camera.Position.y > bigWall.minY)  &&  (camera.Position.x < bigWall.maxX && camera.Position.x > bigWall.minX)  &&  (camera.Position.z < bigWall.maxZ && camera.Position.z > bigWall.minZ);
-}
-
 
 void setShaderValues(Shader &shader) {
     shader.setVec3("viewPos", camera.Position);
