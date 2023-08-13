@@ -19,8 +19,8 @@ using namespace glm;
 using namespace std;
 
 
-const unsigned int SCR_WIDTH = 1024;
-const unsigned int SCR_HEIGHT = 768;
+const unsigned int SCR_WIDTH = 1920;
+const unsigned int SCR_HEIGHT = 1080;
 bool noShadows = false;
 bool noShadowsKeyPressed = true;
 

@@ -68,8 +68,8 @@ Position newSquarePosition(vec3 cameraPosition);
 void addNewLocations();
 neighboringSides findNeighboringSides(Position newPosition);
 
-extern const unsigned int SCR_WIDTH = 1024;
-extern const unsigned int SCR_HEIGHT = 768;
+extern const unsigned int SCR_WIDTH = 1920;
+extern const unsigned int SCR_HEIGHT = 1080;
 extern bool noShadows;
 extern bool noShadowsKeyPressed;
 
@@ -133,8 +133,8 @@ int main() {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-    // Create Window and rendering context using GLFW, resolution is 1024 768
-    GLFWwindow* window = glfwCreateWindow(1024, 768, "Comp371 - Quiz2", nullptr, nullptr);
+    // Create Window and rendering context using GLFW, resolution is 1920 1080
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Comp371 - PROJECT", nullptr, nullptr);
     if (window == nullptr)
     {
         cerr << "Failed to create GLFW window" << endl;
