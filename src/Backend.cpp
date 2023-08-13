@@ -77,18 +77,27 @@ struct Position {
         return z < other.z;
     }
 
+    bool operator==(const Position& other) const {
+        return x == other.x && z == other.z;
+    }
+};
+
+struct neighboringSides {
+    bool left = false;
+    bool right = false;
+    bool up = false;
+    bool down = false;
 };
 
 /**
- * this is a very important map that will store the positions of the squares that have already been drawn
- * it saves the position of the square as a key, and the random values generated the first time as the value
- *
+ * this is for the location of the square in the world, it combines the position and the neighboring sides of the square.
  */
- // map<string, string> mymap;
- // map[1] = "hello";
- //print(map[1])
- // map["hello"] = "world";
- //print(map["hello"])
+struct Location {
+    Position position;
+    neighboringSides sides;
+};
+
+
 map<Position, SquareConstants> drawnSquares;
 
 // textures variables
@@ -116,6 +125,9 @@ vector<vec3> pointLightPositions = {
 bool isNight = false;
 bool isSpotLightOn = false;
 
+extern Location currentSquareLocation;
+float currentSquareAreasHeight[4] = { 50.0f, 50.0f, 50.0f, 50.0f };
+
 /**
  * this function draws 1 square depending of the x and z parameters passed to it.
  * it can call drawArea function to draw the 4 areas inside the square randomly or using already generated values from the drawnSquares map.
@@ -130,10 +142,11 @@ void drawSquare(Shader shader, Shader lightShader, GLuint initialCube, GLuint sp
 
     if (drawnSquares.find(Position{x, z}) != drawnSquares.end()) {
         // square is found
-        AreaConstants area1 = drawArea(shader, initialCube, sphere, x, z, 12.5, 12.5, drawnSquares[Position{x, z}].area1.randomType, drawnSquares[Position{x, z}].area1.randomTexture, drawnSquares[Position{x, z}].area1.random3, drawnSquares[Position{x, z}].area1.random4, drawnSquares[Position{x, z}].area1.random5);
-        AreaConstants area2 = drawArea(shader, initialCube, sphere, x, z, -12.5, 12.5, drawnSquares[Position{x, z}].area2.randomType, drawnSquares[Position{x, z}].area2.randomTexture, drawnSquares[Position{x, z}].area2.random3, drawnSquares[Position{x, z}].area2.random4, drawnSquares[Position{x, z}].area2.random5);
-        AreaConstants area3 = drawArea(shader, initialCube, sphere, x, z, 12.5, -12.5, drawnSquares[Position{x, z}].area3.randomType, drawnSquares[Position{x, z}].area3.randomTexture, drawnSquares[Position{x, z}].area3.random3, drawnSquares[Position{x, z}].area3.random4, drawnSquares[Position{x, z}].area3.random5);
-        AreaConstants area4 = drawArea(shader, initialCube, sphere, x, z, -12.5, -12.5, drawnSquares[Position{x, z}].area4.randomType, drawnSquares[Position{x, z}].area4.randomTexture, drawnSquares[Position{x, z}].area4.random3, drawnSquares[Position{x, z}].area4.random4, drawnSquares[Position{x, z}].area4.random5);
+
+        AreaConstants area1 = drawArea(shader, initialCube, sphere, x, z, 12.5, 12.5, drawnSquares[Position{x, z}].areas[0].randomType, drawnSquares[Position{x, z}].areas[0].randomTexture, drawnSquares[Position{x, z}].areas[0].random3, drawnSquares[Position{x, z}].areas[0].random4, drawnSquares[Position{x, z}].areas[0].random5);
+        AreaConstants area2 = drawArea(shader, initialCube, sphere, x, z, -12.5, 12.5, drawnSquares[Position{x, z}].areas[1].randomType, drawnSquares[Position{x, z}].areas[1].randomTexture, drawnSquares[Position{x, z}].areas[1].random3, drawnSquares[Position{x, z}].areas[1].random4, drawnSquares[Position{x, z}].areas[1].random5);
+        AreaConstants area3 = drawArea(shader, initialCube, sphere, x, z, 12.5, -12.5, drawnSquares[Position{x, z}].areas[2].randomType, drawnSquares[Position{x, z}].areas[2].randomTexture, drawnSquares[Position{x, z}].areas[2].random3, drawnSquares[Position{x, z}].areas[2].random4, drawnSquares[Position{x, z}].areas[2].random5);
+        AreaConstants area4 = drawArea(shader, initialCube, sphere, x, z, -12.5, -12.5, drawnSquares[Position{x, z}].areas[3].randomType, drawnSquares[Position{x, z}].areas[3].randomTexture, drawnSquares[Position{x, z}].areas[3].random3, drawnSquares[Position{x, z}].areas[3].random4, drawnSquares[Position{x, z}].areas[3].random5);
     } else {
         AreaConstants area1 = drawArea(shader, initialCube, sphere, x, z, 12.5, 12.5, 0, 0, 0, 0, 0);
         AreaConstants area2 = drawArea(shader, initialCube, sphere, x, z, -12.5, 12.5, 0, 0, 0, 0, 0);
@@ -562,21 +575,21 @@ AreaConstants buildShops(Shader &shader, GLuint initialCube, float x, float z, f
 
     int randomTexture = !texture ? ((rand() % 8) + 1) : texture;
 
-    translateMatrix = translate(mat4(1.0f), vec3(insideX + x, 7.0f, insideZ + z));
-    scaleMatrix = scale(mat4(1.0f), vec3(12.5f, 7.0f, 32.0f));
+    translateMatrix = translate(mat4(1.0f), vec3(insideX + x + 3.75, 7.0f, insideZ + z));
+    scaleMatrix = scale(mat4(1.0f), vec3(12.5f, 7.0f, 25.0f));
     modelMatrix = translateMatrix * scaleMatrix;
     shader.setMat4("modelMatrix", modelMatrix);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, shopTextures[randomTexture - 1]);
     glDrawArrays(GL_TRIANGLES, 0, 36);
-    translateMatrix = translate(mat4(1.0f), vec3(insideX - 7.5f + x, 7.0f, insideZ + z));
-    scaleMatrix = scale(mat4(1.0f), vec3(12.5f, 7.0f, 32.0f));
+
+    translateMatrix = translate(mat4(1.0f), vec3(insideX - 3.75 + x, 7.0f, insideZ + z));
+    scaleMatrix = scale(mat4(1.0f), vec3(12.5f, 7.0f, 25.0f));
     modelMatrix = translateMatrix * scaleMatrix;
     shader.setMat4("modelMatrix", modelMatrix);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, shopTextures[randomTexture % 8]);
     glDrawArrays(GL_TRIANGLES, 0, 36);
-
 
 
     return AreaConstants{3, randomTexture, 0, 0, 0};
@@ -590,6 +603,7 @@ AreaConstants buildFountain(Shader &shader, GLuint initialCube, GLuint sphere, f
     float time = glfwGetTime() * 5; // Get the current time
     float xOffset = sin(time) * 0.3f;
     float zOffset = cos(time) * 0.3f;
+
     //bottom of the fountain
     glBindVertexArray(initialCube);
     translateMatrix = translate(mat4(1.0f), vec3(insideX + x, 2.0f, insideZ + z));
@@ -629,6 +643,7 @@ AreaConstants buildFountain(Shader &shader, GLuint initialCube, GLuint sphere, f
     shader.setMat4("modelMatrix", modelMatrix);
     glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, (void *) 0);
     glBindVertexArray(initialCube);
+
     //animating water as squares
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, fountainTextures[randomTexture-1]);
@@ -652,7 +667,7 @@ AreaConstants buildFountain(Shader &shader, GLuint initialCube, GLuint sphere, f
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, floorTexture);
         translateMatrix = translate(mat4(1.0f), vec3(insideX + x, 3.999f, insideZ + 7.0f -i* 13.3 + z));
-        scaleMatrix = scale(mat4(1.0f), vec3(27.0f, 0.25f, 2.0f));
+        scaleMatrix = scale(mat4(1.0f), vec3(25.0f, 0.25f, 2.0f));
         modelMatrix = translateMatrix * scaleMatrix;
         shader.setMat4("modelMatrix", modelMatrix);
         glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -661,7 +676,7 @@ AreaConstants buildFountain(Shader &shader, GLuint initialCube, GLuint sphere, f
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, floorTexture);
         translateMatrix = translate(mat4(1.0f), vec3(insideX + 7.0f -i* 13.3 + x, 3.999f,insideZ + 0.5f + z));
-        scaleMatrix = scale(mat4(1.0f), vec3(2.0f, 0.25f, 27.0f));
+        scaleMatrix = scale(mat4(1.0f), vec3(2.0f, 0.25f, 25.0f));
         modelMatrix = translateMatrix * scaleMatrix;
         shader.setMat4("modelMatrix", modelMatrix);
         glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -772,5 +787,27 @@ void setShaderValues(Shader &shader) {
     shader.setVec3("viewPos", camera.Position);
     shader.setInt("noShadows", noShadows); // enable/disable noShadows by pressing 'SPACE'
     shader.setFloat("far_plane", far_plane);
+}
 
+int areaType(int areaNumber) {
+    return drawnSquares[Position{currentSquareLocation.position.x, currentSquareLocation.position.z}].areas[areaNumber].randomType;
+}
+
+float areaHeight(int areaType) {
+    if (areaType == 1) {
+        return 45.0f;
+    } else if (areaType == 2) {
+        return 16.0f;
+    } else if (areaType == 3) {
+        return 80.0f;
+    } else {
+        return 10.0f;
+    }
+}
+
+void updateCurrentSquareHights() {
+    currentSquareAreasHeight[0] = areaHeight(areaType(0));
+    currentSquareAreasHeight[1] = areaHeight(areaType(1));
+    currentSquareAreasHeight[2] = areaHeight(areaType(2));
+    currentSquareAreasHeight[3] = areaHeight(areaType(3));
 }

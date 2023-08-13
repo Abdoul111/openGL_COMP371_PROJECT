@@ -34,10 +34,7 @@ struct AreaConstants {
  * this will store the random variables of all the areas combined, meaning that all 4 areas inside 1 square.
  */
 struct SquareConstants {
-    AreaConstants area1;
-    AreaConstants area2;
-    AreaConstants area3;
-    AreaConstants area4;
+    AreaConstants areas[4];
 };
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -62,6 +59,7 @@ void setShaderValues(Shader &shader);
 void buildLightCube(Shader &shader, GLuint sphere,float x, float z);
 
 bool collisionDetection();
+void updateCurrentSquareHights();
 
 AreaConstants drawArea(Shader shader, GLuint initialCube, GLuint sphere, float x, float z, float insideX, float insideZ, int type, int texture, int random3, int random4, int random5);
 

@@ -93,6 +93,7 @@ extern float lastFrame;
 
 // positions of the point lights
 extern vec3 pointLightPositions[];
+extern float currentSquareAreasHeight[];
 
 extern bool isNight;
 extern bool isSpotLightOn;
@@ -315,9 +316,29 @@ bool cameraInsideCurrentSquare() {
            && camera.Position.x >= currentSquareLocation.position.x - 25.0f && camera.Position.x <= currentSquareLocation.position.x + 25.0f;
 }
 
-bool cameraNotInsideArea() {
-    return true;
+bool cameraInsideArea(int areaNumber) {
+    struct Limits {
+        float xMin;
+        float xMax;
+        float zMin;
+        float zMax;
+    };
+    Limits limits[4] {
+            {currentSquareLocation.position.x + 5, currentSquareLocation.position.x + 20, currentSquareLocation.position.z + 5, currentSquareLocation.position.z + 20},
+            {currentSquareLocation.position.x - 20, currentSquareLocation.position.x - 5, currentSquareLocation.position.z + 5, currentSquareLocation.position.z + 20},
+            {currentSquareLocation.position.x + 5, currentSquareLocation.position.x + 20, currentSquareLocation.position.z - 20, currentSquareLocation.position.z - 5},
+            {currentSquareLocation.position.x - 20, currentSquareLocation.position.x - 5, currentSquareLocation.position.z - 20, currentSquareLocation.position.z - 5}
+    };
+    return camera.Position.x > limits[areaNumber].xMin && camera.Position.x < limits[areaNumber].xMax
+        && camera.Position.z > limits[areaNumber].zMin && camera.Position.z < limits[areaNumber].zMax
+        && camera.Position.y < currentSquareAreasHeight[areaNumber] + 0.5f;
+
 }
+
+bool cameraInsideAnyArea() {
+    return cameraInsideArea(0) || cameraInsideArea(1) || cameraInsideArea(2) || cameraInsideArea(3);
+}
+
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
 
@@ -329,13 +350,17 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
         camera.ProcessKeyboard(FORWARD, deltaTime, isYAxisActive); // move forward 1 unite
 
+        if (cameraInsideAnyArea()) {
+            camera.ProcessKeyboard(BACKWARD, deltaTime, isYAxisActive);
+        }
+
         if (!cameraInsideCurrentSquare()) {
              Position newCurrentPosition = newSquarePosition(camera.Position);
              neighboringSides sides = findNeighboringSides(newCurrentPosition);
              currentSquareLocation = Location{newCurrentPosition, sides};
              cout << "camera position: " << camera.Position.x << ", " << camera.Position.z << endl;
              cout << "new square location: " << currentSquareLocation.position.x << ", " << currentSquareLocation.position.z << endl;
-
+            updateCurrentSquareHights();
              // now we need to add the new locations to the vector so that they get drawn when we pass
              // to the while loop again.
              addNewLocations();
@@ -343,13 +368,18 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
         camera.ProcessKeyboard(BACKWARD, deltaTime, isYAxisActive);
+
+        if (cameraInsideAnyArea()) {
+            camera.ProcessKeyboard(FORWARD, deltaTime, isYAxisActive);
+        }
+
         if (!cameraInsideCurrentSquare()) {
             Position newCurrentPosition = newSquarePosition(camera.Position);
             neighboringSides sides = findNeighboringSides(newCurrentPosition);
             currentSquareLocation = Location{newCurrentPosition, sides};
             cout << "camera position: " << camera.Position.x << ", " << camera.Position.z << endl;
             cout << "new square location: " << currentSquareLocation.position.x << ", " << currentSquareLocation.position.z << endl;
-
+            updateCurrentSquareHights();
             // now we need to add the new locations to the vector so that they get drawn when we pass
             // to the while loop again.
             addNewLocations();
@@ -357,13 +387,18 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     }
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
         camera.ProcessKeyboard(LEFT, deltaTime, isYAxisActive);
+
+        if (cameraInsideAnyArea()) {
+            camera.ProcessKeyboard(RIGHT, deltaTime, isYAxisActive);
+        }
+
         if (!cameraInsideCurrentSquare()) {
             Position newCurrentPosition = newSquarePosition(camera.Position);
             neighboringSides sides = findNeighboringSides(newCurrentPosition);
             currentSquareLocation = Location{newCurrentPosition, sides};
             cout << "camera position: " << camera.Position.x << ", " << camera.Position.z << endl;
             cout << "new square location: " << currentSquareLocation.position.x << ", " << currentSquareLocation.position.z << endl;
-
+            updateCurrentSquareHights();
             // now we need to add the new locations to the vector so that they get drawn when we pass
             // to the while loop again.
             addNewLocations();
@@ -371,13 +406,18 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     }
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
         camera.ProcessKeyboard(RIGHT, deltaTime, isYAxisActive);
+
+        if (cameraInsideAnyArea()) {
+            camera.ProcessKeyboard(LEFT, deltaTime, isYAxisActive);
+        }
+
         if (!cameraInsideCurrentSquare()) {
             Position newCurrentPosition = newSquarePosition(camera.Position);
             neighboringSides sides = findNeighboringSides(newCurrentPosition);
             currentSquareLocation = Location{newCurrentPosition, sides};
             cout << "camera position: " << camera.Position.x << ", " << camera.Position.z << endl;
             cout << "new square location: " << currentSquareLocation.position.x << ", " << currentSquareLocation.position.z << endl;
-
+            updateCurrentSquareHights();
             // now we need to add the new locations to the vector so that they get drawn when we pass
             // to the while loop again.
             addNewLocations();
