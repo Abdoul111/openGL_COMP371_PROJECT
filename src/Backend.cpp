@@ -24,7 +24,7 @@ const unsigned int SCR_HEIGHT = 768;
 bool noShadows = false;
 bool noShadowsKeyPressed = true;
 
-vec3 initialCameraPos = vec3(10.0f, 4.0f, 0.0f);
+vec3 initialCameraPos = vec3(0.0f, 5.5f, 0.0f);
 vec3 lightPos(0.0f, 6.0f, 0.0f);
 Camera camera(initialCameraPos);
 float lastX = (float) SCR_WIDTH / 2.0f;
@@ -106,6 +106,7 @@ unsigned int fountainTextures[3];unsigned int peopleTextures[8];
 unsigned int backgroundTexture;unsigned int treesTexture[2];unsigned int woodTexture;unsigned int streetTexture;
 unsigned int floorTexture;unsigned int firehydrantTexture;unsigned int stopTexture;
 unsigned int signsTexture[7];unsigned int antennaTexture;unsigned int lightTexture[2];
+unsigned int playgroundTextures[6];
 
 
 // light sphere constants:
@@ -187,8 +188,11 @@ AreaConstants drawArea(Shader shader, GLuint initialCube, GLuint sphere, float x
     } else if (random1 == 4) {
         area = buildFountain(shader, initialCube, sphere, x, z, insideX, insideZ, texture, random3, random4, random5);
     }
+    //this is for the blimp
+    int randomBlimp = !random4 ? ((rand() % 8) + 1) : random4;
+    buildBlimp(shader,initialCube,sphere,x,z,randomBlimp);
 
-    return area;
+    return AreaConstants{area.randomType,area.randomTexture,area.random3,randomBlimp,area.random5};
 }
 
 
@@ -283,7 +287,9 @@ unsigned int buildTextures() {
     peopleTextures[4] = loadTexture("rec/textures/fireman.png"); peopleTextures[5] = loadTexture("rec/textures/electrician.png");
     peopleTextures[6] = loadTexture("rec/textures/officer.png");peopleTextures[7] = loadTexture("rec/textures/banker.png");
     lightTexture[0]=loadTexture("rec/textures/lightpole.png");lightTexture[1]=loadTexture("rec/textures/lightpole2.png");
-
+    playgroundTextures[0]= loadTexture("rec/textures/grass.png"); playgroundTextures[1]= loadTexture("rec/textures/white.png");
+    playgroundTextures[2]= loadTexture("rec/textures/goal.png");playgroundTextures[3]= loadTexture("rec/textures/goalkeeper.png");
+    playgroundTextures[4]= loadTexture("rec/textures/goalkeeper2.png");playgroundTextures[5]= loadTexture("rec/textures/ball.png");
 
     return backgroundTexture;
 }
@@ -514,37 +520,6 @@ void buildStreetAndDecor(Shader &shader, GLuint initialCube, GLuint sphere, floa
     }
 
 
-    //this draws the balloon
-    float time = glfwGetTime(); // Get the current time
-    float yOffset = cos(time) * 45.0f;
-    translateMatrix = translate(mat4(1.0f), vec3(90.0f + x, 90.0f + yOffset, 0.0f + z));
-    scaleMatrix = scale(mat4(1.0f), vec3(15.0f, 5.0f, 15.0f));
-    modelMatrix = translateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, balloonTextures[0]);
-    glBindVertexArray(sphere);
-    glDrawElements(GL_TRIANGLES, vertexCount ,GL_UNSIGNED_INT,(void*)0);
-
-    //this draws the blimp
-    translateMatrix = translate(mat4(1.0f), vec3( yOffset + x, 100.0f, 0.0f + z));
-    scaleMatrix = scale(mat4(1.0f), vec3(70.0f, 5.0f, 15.0f));
-    modelMatrix = translateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, balloonTextures[1]);
-    glDrawElements(GL_TRIANGLES, vertexCount ,GL_UNSIGNED_INT,(void*)0);
-    // this draws the welcome sign
-    glBindVertexArray(initialCube);
-    //sign on blimp
-    translateMatrix = translate(mat4(1.0f), vec3( yOffset-27 + x, 100.0f, 0.0f + z));
-    scaleMatrix = scale(mat4(1.0f), vec3(20.0f, 2.0f, 0.1f));
-    modelMatrix = translateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, signsTexture[0]);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-
 
 
     //THIS DRAWS THE LIGHTS base
@@ -567,6 +542,41 @@ void buildStreetAndDecor(Shader &shader, GLuint initialCube, GLuint sphere, floa
         shader.setMat4("modelMatrix", modelMatrix);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, lightTexture[1]);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+}
+void buildBlimp(Shader &shader, GLuint initialCube, GLuint sphere, float x, float z,int randomValue){
+
+    //this draws the balloon
+    if(randomValue==1) {
+        float time = glfwGetTime(); // Get the current time
+        float yOffset = cos(time) * 45.0f;
+        translateMatrix = translate(mat4(1.0f), vec3(90.0f + x, 90.0f + yOffset, 0.0f + z));
+        scaleMatrix = scale(mat4(1.0f), vec3(15.0f, 5.0f, 15.0f));
+        modelMatrix = translateMatrix * scaleMatrix;
+        shader.setMat4("modelMatrix", modelMatrix);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, balloonTextures[0]);
+        glBindVertexArray(sphere);
+        glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, (void *) 0);
+
+        //this draws the blimp
+        translateMatrix = translate(mat4(1.0f), vec3(yOffset + x, 100.0f, 0.0f + z));
+        scaleMatrix = scale(mat4(1.0f), vec3(70.0f, 5.0f, 15.0f));
+        modelMatrix = translateMatrix * scaleMatrix;
+        shader.setMat4("modelMatrix", modelMatrix);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, balloonTextures[1]);
+        glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, (void *) 0);
+        // this draws the welcome sign
+        glBindVertexArray(initialCube);
+        //sign on blimp
+        translateMatrix = translate(mat4(1.0f), vec3(yOffset - 27 + x, 100.0f, 0.0f + z));
+        scaleMatrix = scale(mat4(1.0f), vec3(20.0f, 2.0f, 0.1f));
+        modelMatrix = translateMatrix * scaleMatrix;
+        shader.setMat4("modelMatrix", modelMatrix);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, signsTexture[0]);
         glDrawArrays(GL_TRIANGLES, 0, 36);
     }
 }
@@ -598,8 +608,8 @@ AreaConstants buildShops(Shader &shader, GLuint initialCube, float x, float z, f
 AreaConstants buildFountain(Shader &shader, GLuint initialCube, GLuint sphere, float x, float z, float insideX, float insideZ, int texture, int random3, int random4, int random5) {
 
     int randomTexture = !texture ? 3 : texture;
-
-
+    // this builds a fountain
+/*
     float time = glfwGetTime() * 5; // Get the current time
     float xOffset = sin(time) * 0.3f;
     float zOffset = cos(time) * 0.3f;
@@ -667,7 +677,7 @@ AreaConstants buildFountain(Shader &shader, GLuint initialCube, GLuint sphere, f
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, floorTexture);
         translateMatrix = translate(mat4(1.0f), vec3(insideX + x, 3.999f, insideZ + 7.0f -i* 13.3 + z));
-        scaleMatrix = scale(mat4(1.0f), vec3(25.0f, 0.25f, 2.0f));
+        scaleMatrix = scale(mat4(1.0f), vec3(27.0f, 0.25f, 2.0f));
         modelMatrix = translateMatrix * scaleMatrix;
         shader.setMat4("modelMatrix", modelMatrix);
         glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -676,11 +686,74 @@ AreaConstants buildFountain(Shader &shader, GLuint initialCube, GLuint sphere, f
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, floorTexture);
         translateMatrix = translate(mat4(1.0f), vec3(insideX + 7.0f -i* 13.3 + x, 3.999f,insideZ + 0.5f + z));
-        scaleMatrix = scale(mat4(1.0f), vec3(2.0f, 0.25f, 25.0f));
+        scaleMatrix = scale(mat4(1.0f), vec3(2.0f, 0.25f, 27.0f));
+        modelMatrix = translateMatrix * scaleMatrix;
+        shader.setMat4("modelMatrix", modelMatrix);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }*/
+
+    // this builds a playground
+    glBindVertexArray(initialCube);
+    translateMatrix = translate(mat4(1.0f), vec3(insideX + x, 0.01f, insideZ + z));
+    scaleMatrix = scale(mat4(1.0f), vec3(27.0f, 0.01f, 27.0));
+    modelMatrix = translateMatrix * scaleMatrix;
+    shader.setMat4("modelMatrix", modelMatrix);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, playgroundTextures[0]);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    //white floor
+    for (int i = 0; i < 2; i++) {
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, playgroundTextures[1]);
+        translateMatrix = translate(mat4(1.0f), vec3(insideX + x, 0.02f, insideZ + 7.0f -i* 13.3 + z));
+        scaleMatrix = scale(mat4(1.0f), vec3(27.0f, 0.01f, 2.0f));
+        modelMatrix = translateMatrix * scaleMatrix;
+        shader.setMat4("modelMatrix", modelMatrix);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        translateMatrix = translate(mat4(1.0f), vec3(insideX + 7.0f -i* 13.3 + x, 0.02f,insideZ + 0.5f + z));
+        scaleMatrix = scale(mat4(1.0f), vec3(2.0f, 0.01f, 27.0f));
         modelMatrix = translateMatrix * scaleMatrix;
         shader.setMat4("modelMatrix", modelMatrix);
         glDrawArrays(GL_TRIANGLES, 0, 36);
     }
+    // the goals
+    for (int i = 0; i < 2; i++) {
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, playgroundTextures[2]);
+        translateMatrix = translate(mat4(1.0f), vec3(insideX + x + 7, 2.5f, insideZ + z));
+        if(i==0){translateMatrix = translate(mat4(1.0f), vec3(insideX + x - 7, 2.5f, insideZ + z));}
+        scaleMatrix = scale(mat4(1.0f), vec3(0.01f, 2.5f, 27.0));
+        modelMatrix = translateMatrix * scaleMatrix;
+        shader.setMat4("modelMatrix", modelMatrix);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+    // the goalkeepers
+    float currentTime = glfwGetTime();
+    float radius = 5.6f;
+    float speed = 1.0f;
+    float xPos = radius * cos(currentTime * speed);
+    float zPos = radius * sin(currentTime * speed);
+    for (int i = 0; i < 2; i++) {
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, playgroundTextures[4]);
+        if(i==0){glBindTexture(GL_TEXTURE_2D, playgroundTextures[3]);}
+        translateMatrix = translate(mat4(1.0f), vec3(insideX + x + 6, 2.5f, insideZ + z+zPos));
+        if(i==0){translateMatrix = translate(mat4(1.0f), vec3(insideX + x - 6, 2.5f, insideZ + z-zPos));}
+        scaleMatrix = scale(mat4(1.0f), vec3(0.01f, 2.5f, 7.0));
+        modelMatrix = translateMatrix * scaleMatrix;
+        shader.setMat4("modelMatrix", modelMatrix);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+    //the ball
+    glBindVertexArray(sphere);
+    translateMatrix = translate(mat4(1.0f), vec3(insideX + x+xPos, 1.0f, insideZ + z+zPos));
+    scaleMatrix = scale(mat4(1.0f), vec3(2.0f, 0.75f, 2.0));
+    modelMatrix = translateMatrix * scaleMatrix;
+    shader.setMat4("modelMatrix", modelMatrix);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, playgroundTextures[5]);
+    glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, (void *) 0);
+
     return AreaConstants{4, randomTexture, 0, 0, 0};
 }
 

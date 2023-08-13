@@ -50,6 +50,7 @@ AreaConstants buildBuilding(Shader &shader, GLuint initialCube, float x, float z
 AreaConstants buildScrapers(Shader &shader, GLuint initialCube, float x, float z, float insideX, float insideZ, int texture, int random3, int random4, int random5);
 void buildTree(Shader &shader, GLuint initialCube, float x, float z);
 void buildStreetAndDecor(Shader &shader, GLuint initialCube, GLuint sphere, float x, float z);
+void buildBlimp(Shader &shader, GLuint initialCube, GLuint sphere, float x, float z,int randomValue);
 AreaConstants buildShops(Shader &shader, GLuint initialCube, float x, float z, float insideX, float insideZ, int texture, int random3, int random4, int random5);
 AreaConstants buildFountain(Shader &shader, GLuint initialCube, GLuint sphere, float x, float z, float insideX, float insideZ, int texture, int random3, int random4, int random5);
 void buildPeople(Shader &shader, GLuint initialCube, float x, float z, float insideX, float insideZ);
