@@ -43,7 +43,8 @@ struct SpotLight {
     vec3 specular;
 };
 
-#define NR_POINT_LIGHTS 2
+uniform int currentPointLightNb;
+#define NR_POINT_LIGHTS 100
 
 in VS_OUT {
     vec3 FragPos;
@@ -56,7 +57,6 @@ uniform samplerCube depthMap;
 
 uniform vec3 lightPos;
 uniform vec3 viewPos;
-
 uniform DirLight dirLight;
 uniform PointLight pointLights[NR_POINT_LIGHTS];
 uniform SpotLight spotLight;
@@ -65,6 +65,7 @@ uniform Material material;
 uniform float far_plane;
 uniform bool noShadows;
 uniform bool isSpotLightOn;
+uniform bool isPointLightOn;
 
 
 float ShadowCalculation(vec3 fragPos)
@@ -116,7 +117,7 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
     float distance = length(light.position - fragPos);
     float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
     // combine results
-    int intensity = 5;
+    int intensity = 4;
     vec3 ambient = light.ambient * vec3(texture(material.diffuse, fs_in.TexCoords));
     vec3 diffuse = light.diffuse * diff * vec3(texture(material.diffuse, fs_in.TexCoords));
     vec3 specular = light.specular * spec * vec3(texture(material.specular, fs_in.TexCoords));
@@ -169,8 +170,8 @@ void main()
         // phase 1: directional lighting
         vec3 result = CalcDirLight(dirLight, norm, viewDir);
         // phase 2: point lights
-        for(int i = 0; i < NR_POINT_LIGHTS; i++)
-            result += CalcPointLight(pointLights[i], norm, fs_in.FragPos, viewDir);
+        for(int i = 0; (i < currentPointLightNb && i < NR_POINT_LIGHTS); i++)
+            result += isPointLightOn? CalcPointLight(pointLights[i], norm, fs_in.FragPos, viewDir) : vec3(0.0);
         // phase 3: spot light
 
         result += isSpotLightOn? CalcSpotLight(spotLight, norm, fs_in.FragPos, viewDir) : vec3(0.0);

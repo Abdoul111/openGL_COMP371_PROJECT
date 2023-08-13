@@ -63,7 +63,7 @@ struct Location {
 };
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
-void drawScene(Shader shader, GLuint initialCube, GLuint sphere);
+void drawScene(Shader shader, Shader lightShader, GLuint initialCube, GLuint sphere);
 Position newSquarePosition(vec3 cameraPosition);
 void addNewLocations();
 neighboringSides findNeighboringSides(Position newPosition);
@@ -164,50 +164,6 @@ int main() {
     squarePositions.push_back(squareLocation4.position);
     squarePositions.push_back(squareLocation5.position);
 
-    // whenever we add a square, we check if it has neighboring squares, (obviously, it should have at least 1)
-    // this will be done later when we add squares dynamically
-
-    // 20
-    // 15 + constant -> 0 - 10, (15, 25)
-
-
-    // square                   15*15
-    // (0,0) 7.5
-    // LEFT -> 1 unit to the left, then updates the position coordinates -> (1,0),
-    // then checks if this new position is still inside the square
-    // LEFT, LEFT, LEFT, LEFT, LEFT, LEFT, LEFT, LEFT(8, 0) = 8 LEFT
-    // then we are in the left square
-    // I have the center of current square, then I can easily get the center of the new square
-    // (0,0) -> (15, 0)
-    // and we have the current position (8, 0)
-    // then currentSquare = newSquare
-    // generateNearbySquares() ->
-    // whenever we create a new square, we store its neighbors squares in a list
-    // then I know what are the missing squares around me
-    // then I generate what is missing
-
-
-    // randomType : specifies the type (building, shop, facilities, etc)
-
-
-    // square be a square
-    //if (building) -> randomTexture : number buildings (1, 2)
-    //              -> random3 : specifies the height of the building (base= 10 unites + (5 to 10))
-    //              -> random4 : specifies the number of trees around the building (0 to 5)
-    //              -> random5 : specifies the texture of the building (6 choices)
-
-    // else if (shop) -> randomTexture : specifies the texture of the shop (8 choices)
-    //               -> random3 : specifies the height of the shop (base= 5 unites + (1 to 5 unites))
-
-
-    // to ensure that the player cannot enter inside objects, we can save the boundaries of
-    // the 4 elements inside the square in a list and then save those in a list of boundaries.
-    // then for each move from the play, for each boundary, we check for each side if the player
-    // have moved into an object. If yes, then we don't let the camera move in this direction and move it back
-    // from where it moved
-
-    // if building 1 is 50x50, then building 2 is 50x50, and in between we have 4 unites, then let square be 110x110.
-
     // Set the keyboard key and mouse callback functions
     glfwSetKeyCallback(window, keyCallback);
     glfwSetCursorPosCallback(window, mouse_callback);
@@ -225,7 +181,6 @@ int main() {
     Shader shader("shaders/textureShader.vs", "shaders/textureShader.fs");
     Shader depthShader("shaders/depthShader.vs", "shaders/depthShader.fs", "shaders/depthShader.gs");
     Shader lightCubeShader("shaders/lightShader.vs", "shaders/lightShader.fs");
-
 
     unsigned int defaultTexture = buildTextures();
 
@@ -303,7 +258,7 @@ int main() {
         depthShader.setFloat("far_plane", far_plane);
         depthShader.setVec3("lightPos", lightPos);
         // the drawScene function draws the all the squares in the world (here we do the shadows)
-        drawScene(shader, initialCube, sphere);
+        drawScene(shader, lightCubeShader, initialCube, sphere);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -327,8 +282,8 @@ int main() {
         glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubemap);
 
         // the drawScene function draws the all the squares in the world
-        drawScene(shader, initialCube, sphere);
-        buildLightCube(lightCubeShader, sphere,0,0);
+        drawScene(shader, lightCubeShader, initialCube, sphere);
+        //buildLightCube(lightCubeShader, sphere,0,0);
 
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         // End Frame
@@ -344,9 +299,9 @@ int main() {
 /**
  * looping through the vector to draw the squares
  */
-void drawScene(Shader shader, GLuint initialCube, GLuint sphere) {
+void drawScene(Shader shader, Shader lightShader, GLuint initialCube, GLuint sphere) {
     for (int i = 0; i < squareLocations.size(); i++) {
-        drawSquare(shader, initialCube, sphere, squareLocations[i].position.x, squareLocations[i].position.z);
+        drawSquare(shader, lightShader, initialCube, sphere, squareLocations[i].position.x, squareLocations[i].position.z);
     }
 }
 

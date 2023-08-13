@@ -84,6 +84,11 @@ struct Position {
  * it saves the position of the square as a key, and the random values generated the first time as the value
  *
  */
+ // map<string, string> mymap;
+ // map[1] = "hello";
+ //print(map[1])
+ // map["hello"] = "world";
+ //print(map["hello"])
 map<Position, SquareConstants> drawnSquares;
 
 // textures variables
@@ -100,9 +105,12 @@ int resolution = 65;
 int vertexCount = 6 * (resolution / 2) * resolution + 1;
 
 // positions of the point lights
-glm::vec3 pointLightPositions[] = {
-        glm::vec3( 0.0f,  5.0f,  50.0f),
-        glm::vec3( 0.0f, 5.0f, -50.0f)
+vector<vec3> pointLightPositions = {
+        vec3(3, 10.15, 3),
+        vec3(3 + 50, 10.15, 3),
+        vec3(3, 10.15, 3 + 50),
+        vec3(3 - 50, 10.15, 3),
+        vec3(3 - 50, 10.15, 3 - 50),
 };
 
 bool isNight = false;
@@ -112,12 +120,13 @@ bool isSpotLightOn = false;
  * this function draws 1 square depending of the x and z parameters passed to it.
  * it can call drawArea function to draw the 4 areas inside the square randomly or using already generated values from the drawnSquares map.
  */
-void drawSquare(Shader shader, GLuint initialCube, GLuint sphere, float x, float z) {
+void drawSquare(Shader shader, Shader lightShader, GLuint initialCube, GLuint sphere, float x, float z) {
 
+    buildLightCube(lightShader, sphere, x, z);
+
+    shader.use();
     buildTree(shader, initialCube, x, z);
     buildStreetAndDecor(shader, initialCube, sphere, x, z);
-    // this caused an issue where it would remove an area from being built
-    //buildLightCube(shader,sphere,x,z);
 
     if (drawnSquares.find(Position{x, z}) != drawnSquares.end()) {
         // square is found
@@ -135,6 +144,10 @@ void drawSquare(Shader shader, GLuint initialCube, GLuint sphere, float x, float
     }
 
 }
+
+// vector shops will store the bounderies of the buildings
+// whenever we move, we check if we checked the boundary
+
 
 /**
  * this function draws the 1 area inside the square depending on the insideX and insideZ parameters passed to it.
@@ -280,7 +293,6 @@ void buildBackground(Shader &shader, GLuint blueBigCube, float x, float z) {
     glDrawArrays(GL_TRIANGLES, 0, 36);
     shader.setInt("reverse_normals", 0);
     glEnable(GL_CULL_FACE);
-
 }
 
 AreaConstants buildBuilding(Shader &shader, GLuint initialCube, float x, float z, float insideX, float insideZ, int texture, int random3, int random4, int random5) {
@@ -523,31 +535,22 @@ void buildStreetAndDecor(Shader &shader, GLuint initialCube, GLuint sphere, floa
 
 
     //THIS DRAWS THE LIGHTS base
-    for(int i =0;i<4;i++) {
-        if(i==0){translateMatrix = translate(mat4(1.0f), vec3(3 + x, 5, 3 + z));}
-        if(i==1){translateMatrix = translate(mat4(1.0f), vec3(-3 + x, 5, 3 + z));}
-        if(i==2){translateMatrix = translate(mat4(1.0f), vec3(3 + x, 5, -3 + z));}
-        if(i==3){translateMatrix = translate(mat4(1.0f), vec3(-3 + x, 5, -3 + z));}
-        scaleMatrix = scale(mat4(1.0f), vec3(1.25f, 5.0f, 1.25f));
-        modelMatrix = translateMatrix * scaleMatrix;
-        shader.setMat4("modelMatrix", modelMatrix);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, lightTexture[0]);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-    }
+    translateMatrix = translate(mat4(1.0f), vec3(3 + x, 5, 3 + z));
+    scaleMatrix = scale(mat4(1.0f), vec3(1.25f, 5.0f, 1.25f));
+    modelMatrix = translateMatrix * scaleMatrix;
+    shader.setMat4("modelMatrix", modelMatrix);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, lightTexture[0]);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
     //THIS DRAWS THE LIGHT top
-    for(int i =0;i<4;i++) {
-        if(i==0){translateMatrix = translate(mat4(1.0f), vec3(3+ x, 10.15, 3 + z));}
-        if(i==1){translateMatrix = translate(mat4(1.0f), vec3(-3 + x, 10.15, 3 + z));}
-        if(i==2){translateMatrix = translate(mat4(1.0f), vec3(3 + x, 10.15, -3 + z));}
-        if(i==3){translateMatrix = translate(mat4(1.0f), vec3(-3 + x, 10.15, -3 + z));}
-        scaleMatrix = scale(mat4(1.0f), vec3(1.25f, 0.15f, 7.0f));
-        modelMatrix = translateMatrix * scaleMatrix;
-        shader.setMat4("modelMatrix", modelMatrix);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, lightTexture[1]);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-    }
+    translateMatrix = translate(mat4(1.0f), vec3(3+ x, 10.15, 3 + z));
+    scaleMatrix = scale(mat4(1.0f), vec3(1.25f, 0.15f, 7.0f));
+    modelMatrix = translateMatrix * scaleMatrix;
+    shader.setMat4("modelMatrix", modelMatrix);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, lightTexture[1]);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
 }
 
 AreaConstants buildShops(Shader &shader, GLuint initialCube, float x, float z, float insideX, float insideZ, int texture, int random3, int random4, int random5) {
@@ -683,24 +686,21 @@ void buildLightCube(Shader &shader, GLuint sphere,float x,float z) {
     glBindVertexArray(sphere);
     glDrawElements(GL_TRIANGLES, vertexCount ,GL_UNSIGNED_INT,(void*)0);
 
-    for(int i=0;i<8;i++){
-        model = glm::mat4(1.0f);
-        //Inner lights
-        if(i==0){model = glm::translate(model, vec3(3+ x, 10.0, 1.50 + z));}
-        if(i==1){model = glm::translate(model, vec3(-3+ x, 10.0, 1.50 + z));}
-        if(i==2){model = glm::translate(model, vec3(3+ x, 10.0, -1.50 + z));}
-        if(i==3){model = glm::translate(model, vec3(-3+ x, 10.0, -1.50 + z));}
-        //Outer lights
-        if(i==4){model = glm::translate(model, vec3(3+ x, 10.0, 4.50 + z));}
-        if(i==5){model = glm::translate(model, vec3(-3+ x, 10.0, 4.50 + z));}
-        if(i==6){model = glm::translate(model, vec3(3+ x, 10.0, -4.50 + z));}
-        if(i==7){model = glm::translate(model, vec3(-3+ x, 10.0, -4.50 + z));}
-        model = glm::scale(model, glm::vec3(0.25f, 0.15f, 0.25f)); // a smaller cube
-        shader.setMat4("model", model);
-
-        glBindVertexArray(sphere);
-        glDrawElements(GL_TRIANGLES, vertexCount ,GL_UNSIGNED_INT,(void*)0);
+    model = glm::mat4(1.0f);
+    //Inner lights
+    vec3 position = vec3(3+ x, 10.0, 1.50 + z);
+    model = glm::translate(model, position);
+    // adding the position to the vector
+    if (std::find(pointLightPositions.begin(), pointLightPositions.end(), position) == pointLightPositions.end()) {
+        // not found
+        pointLightPositions.push_back(position);
     }
+
+    model = glm::scale(model, glm::vec3(0.25f, 0.15f, 0.25f)); // a smaller cube
+    shader.setMat4("model", model);
+
+    glBindVertexArray(sphere);
+    glDrawElements(GL_TRIANGLES, vertexCount ,GL_UNSIGNED_INT,(void*)0);
 
 }
 
@@ -718,25 +718,23 @@ void setShaderValues(Shader &shader) {
     // directional light
     shader.setVec3("dirLight.direction", -0.2f, -1.0f, -0.3f);
     if (!isNight) shader.setVec3("dirLight.ambient", 0.6f, 0.6f, 0.6f);
-    else shader.setVec3("dirLight.ambient", 0.1f, 0.1f, 0.1f);
+    else shader.setVec3("dirLight.ambient", 0.03f, 0.03f, 0.03f);
     shader.setVec3("dirLight.diffuse", 0.4f, 0.4f, 0.4f);
     shader.setVec3("dirLight.specular", 0.5f, 0.5f, 0.5f);
-    // point light 1
-    shader.setVec3("pointLights[0].position", pointLightPositions[0]);
-    shader.setVec3("pointLights[0].ambient", 0.25f, 0.25f, 0.25f);
-    shader.setVec3("pointLights[0].diffuse", 0.8f, 0.8f, 0.8f);
-    shader.setVec3("pointLights[0].specular", 1.0f, 1.0f, 1.0f);
-    shader.setFloat("pointLights[0].constant", 1.0f);
-    shader.setFloat("pointLights[0].linear", 0.09f);
-    shader.setFloat("pointLights[0].quadratic", 0.032f);
-    // point light 2
-    shader.setVec3("pointLights[1].position", pointLightPositions[1]);
-    shader.setVec3("pointLights[1].ambient", 0.25f, 0.25f, 0.25f);
-    shader.setVec3("pointLights[1].diffuse", 0.8f, 0.8f, 0.8f);
-    shader.setVec3("pointLights[1].specular", 1.0f, 1.0f, 1.0f);
-    shader.setFloat("pointLights[1].constant", 1.0f);
-    shader.setFloat("pointLights[1].linear", 0.09f);
-    shader.setFloat("pointLights[1].quadratic", 0.032f);
+
+    // point lights
+    shader.setInt("currentPointLightNb", pointLightPositions.size());
+    shader.setBool("isPointLightOn", isNight);
+    for (int i = 0; i < pointLightPositions.size(); i++) {
+        shader.setVec3("pointLights[" + std::to_string(i) + "].position", pointLightPositions[i]);
+        shader.setVec3("pointLights[" + std::to_string(i) + "].ambient", 0.25f, 0.25f, 0.25f);
+        shader.setVec3("pointLights[" + std::to_string(i) + "].diffuse", 0.8f, 0.8f, 0.8f);
+        shader.setVec3("pointLights[" + std::to_string(i) + "].specular", 1.0f, 1.0f, 1.0f);
+        shader.setFloat("pointLights[" + std::to_string(i) + "].constant", 1.0f);
+        shader.setFloat("pointLights[" + std::to_string(i) + "].linear", 0.09f);
+        shader.setFloat("pointLights[" + std::to_string(i) + "].quadratic", 0.032f);
+    }
+
     // spotLight
 
     shader.setVec3("spotLight.position", camera.Position);

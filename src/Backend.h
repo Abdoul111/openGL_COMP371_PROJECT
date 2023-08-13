@@ -2,7 +2,8 @@
 // Created by zizoo on 8/10/2023.
 //
 
-
+#include "algorithm"
+#include "vector"
 #include <iostream>
 
 #define GLEW_STATIC 1
@@ -45,7 +46,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 GLuint loadTexture(const char* filename);
 unsigned int buildTextures();
 
-void drawSquare(Shader shader, GLuint initialCube, GLuint sphere, float x, float z);
+void drawSquare(Shader shader, Shader lightShader, GLuint initialCube, GLuint sphere, float x, float z);
 void buildBackground(Shader &shader, GLuint blueBigCube, float x, float z, float insideX, float insideZ);
 AreaConstants buildBuilding(Shader &shader, GLuint initialCube, float x, float z, float insideX, float insideZ, int texture, int random3, int random4, int random5);
 
