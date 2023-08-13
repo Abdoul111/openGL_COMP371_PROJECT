@@ -120,23 +120,24 @@ void drawSquare(Shader shader, Shader lightShader, GLuint initialCube, GLuint sp
     buildLightCube(lightShader, sphere, x, z);
 
     shader.use();
-    buildTree(shader, initialCube, x, z);
     buildStreetAndDecor(shader, initialCube, sphere, x, z);
 
     if (drawnSquares.find(Position{x, z}) != drawnSquares.end()) {
         // square is found
+        int randomTexture = buildTree(shader, initialCube, x, z, drawnSquares[Position{x, z}].treeRandomTexture);
 
         AreaConstants area1 = drawArea(shader, initialCube, sphere, x, z, 12.5, 12.5, drawnSquares[Position{x, z}].areas[0].randomType, drawnSquares[Position{x, z}].areas[0].randomTexture, drawnSquares[Position{x, z}].areas[0].random3, drawnSquares[Position{x, z}].areas[0].random4, drawnSquares[Position{x, z}].areas[0].random5);
         AreaConstants area2 = drawArea(shader, initialCube, sphere, x, z, -12.5, 12.5, drawnSquares[Position{x, z}].areas[1].randomType, drawnSquares[Position{x, z}].areas[1].randomTexture, drawnSquares[Position{x, z}].areas[1].random3, drawnSquares[Position{x, z}].areas[1].random4, drawnSquares[Position{x, z}].areas[1].random5);
         AreaConstants area3 = drawArea(shader, initialCube, sphere, x, z, 12.5, -12.5, drawnSquares[Position{x, z}].areas[2].randomType, drawnSquares[Position{x, z}].areas[2].randomTexture, drawnSquares[Position{x, z}].areas[2].random3, drawnSquares[Position{x, z}].areas[2].random4, drawnSquares[Position{x, z}].areas[2].random5);
         AreaConstants area4 = drawArea(shader, initialCube, sphere, x, z, -12.5, -12.5, drawnSquares[Position{x, z}].areas[3].randomType, drawnSquares[Position{x, z}].areas[3].randomTexture, drawnSquares[Position{x, z}].areas[3].random3, drawnSquares[Position{x, z}].areas[3].random4, drawnSquares[Position{x, z}].areas[3].random5);
     } else {
+        int randomTexture = buildTree(shader, initialCube, x, z, 0);
         AreaConstants area1 = drawArea(shader, initialCube, sphere, x, z, 12.5, 12.5, 0, 0, 0, 0, 0);
         AreaConstants area2 = drawArea(shader, initialCube, sphere, x, z, -12.5, 12.5, 0, 0, 0, 0, 0);
         AreaConstants area3 = drawArea(shader, initialCube, sphere, x, z, 12.5, -12.5, 0, 0, 0, 0, 0);
         AreaConstants area4 = drawArea(shader, initialCube, sphere, x, z, -12.5, -12.5, 0, 0, 0, 0, 0);
 
-        drawnSquares.insert(pair<Position, SquareConstants>(Position{x, z}, SquareConstants{area1, area2, area3, area4}));
+        drawnSquares.insert(pair<Position, SquareConstants>(Position{x, z}, SquareConstants{area1, area2, area3, area4, randomTexture}));
     }
 
 }
@@ -382,9 +383,9 @@ AreaConstants buildScrapers(Shader &shader, GLuint initialCube, float x, float z
 
     return AreaConstants{2, randomTexture, 0, 0, 0};
 }
-void buildTree(Shader &shader, GLuint initialCube, float x, float z) {
+int buildTree(Shader &shader, GLuint initialCube, float x, float z, int randomTexture) {
     glBindVertexArray(initialCube);// CUBE BASE
-
+    int randomTreeTexture = !randomTexture? ((rand() % 3)+1):randomTexture;
     for(int i=0;i<6;i++) {
         // building bark
         translateMatrix = translate(mat4(1.0f), vec3(21.5 + x, 3.0f, 21.5-i*8.5 + z));
@@ -400,13 +401,17 @@ void buildTree(Shader &shader, GLuint initialCube, float x, float z) {
         modelMatrix = translateMatrix * scaleMatrix;
         shader.setMat4("modelMatrix", modelMatrix);
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, treesTexture[0]);
+
+        glBindTexture(GL_TEXTURE_2D, treesTexture[randomTreeTexture-1]);
         glDrawArrays(GL_TRIANGLES, 0, 36);
     }
+    return randomTreeTexture;
 }
 
 void buildStreetAndDecor(Shader &shader, GLuint initialCube, GLuint sphere, float x, float z) {
     // this builds the street
+    glBindVertexArray(initialCube);// CUBE BASE
+
     for (int i = 0; i < 2; i++) {
         translateMatrix = translate(mat4(1.0f), vec3(0.0f + x, -0.01f, 0.0f + z));
         scaleMatrix = scale(mat4(1.0f), vec3(10.0f, 0.0f, 100.0f));
@@ -590,154 +595,157 @@ AreaConstants buildShops(Shader &shader, GLuint initialCube, float x, float z, f
 }
 AreaConstants buildFountain(Shader &shader, GLuint initialCube, GLuint sphere, float x, float z, float insideX, float insideZ, int texture, int random3, int random4, int random5) {
 
-    int randomTexture = !texture ? 3 : texture;
+    // the next variable decides if we draw a fountain, a playground or a garden
+    int randomSpecificType = !random3 ? ((rand() % 3) + 1) : random3;
     // this builds a fountain
-/*
-    float time = glfwGetTime() * 5; // Get the current time
-    float xOffset = sin(time) * 0.3f;
-    float zOffset = cos(time) * 0.3f;
+    if (randomSpecificType == 1) {
+        float time = glfwGetTime() * 5; // Get the current time
+        float xOffset = sin(time) * 0.3f;
+        float zOffset = cos(time) * 0.3f;
 
-    //bottom of the fountain
-    glBindVertexArray(initialCube);
-    translateMatrix = translate(mat4(1.0f), vec3(insideX + x, 2.0f, insideZ + z));
-    scaleMatrix = scale(mat4(1.0f), vec3(27.0f, 2.0f, 27.0));
-    modelMatrix = translateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, fountainTextures[0]);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-    // animating water
-    glBindVertexArray(sphere);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, fountainTextures[randomTexture-1]);
-    translateMatrix = translate(mat4(1.0f), vec3(insideX - xOffset + x, 3.99f, insideZ + zOffset + z));
-    scaleMatrix = scale(mat4(1.0f), vec3(23.0f, 0.1f, 23.0f));
-    modelMatrix = translateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, (void *) 0);
-    translateMatrix = translate(mat4(1.0f), vec3(insideX + zOffset + x, 3.99f, insideZ - xOffset + z));
-    scaleMatrix = scale(mat4(1.0f), vec3(23.0f, 0.1f, 23.0f));
-    modelMatrix = translateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, (void *) 0);
-    translateMatrix = translate(mat4(1.0f), vec3(insideX - xOffset + x, 3.99f, insideZ + zOffset + z));
-    scaleMatrix = scale(mat4(1.0f), vec3(23.0f, 0.1f, 23.0f));
-    modelMatrix = translateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, (void *) 0);
-    translateMatrix = translate(mat4(1.0f), vec3(insideX + zOffset + x, 3.99f, insideZ - zOffset + z));
-    scaleMatrix = scale(mat4(1.0f), vec3(23.0f, 0.1f, 23.0f));
-    modelMatrix = translateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, (void *) 0);
-    translateMatrix = translate(mat4(1.0f), vec3(insideX - xOffset + x, 3.99f, insideZ + xOffset + z));
-    scaleMatrix = scale(mat4(1.0f), vec3(25.0f, 0.1f, 25.0f));
-    modelMatrix = translateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, (void *) 0);
-    glBindVertexArray(initialCube);
+        //bottom of the fountain
+        glBindVertexArray(initialCube);
+        translateMatrix = translate(mat4(1.0f), vec3(insideX + x, 2.0f, insideZ + z));
+        scaleMatrix = scale(mat4(1.0f), vec3(27.0f, 2.0f, 27.0));
+        modelMatrix = translateMatrix * scaleMatrix;
+        shader.setMat4("modelMatrix", modelMatrix);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, fountainTextures[0]);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        // animating water
+        glBindVertexArray(sphere);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, fountainTextures[2]);
+        translateMatrix = translate(mat4(1.0f), vec3(insideX - xOffset + x, 3.99f, insideZ + zOffset + z));
+        scaleMatrix = scale(mat4(1.0f), vec3(23.0f, 0.1f, 23.0f));
+        modelMatrix = translateMatrix * scaleMatrix;
+        shader.setMat4("modelMatrix", modelMatrix);
+        glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, (void *) 0);
+        translateMatrix = translate(mat4(1.0f), vec3(insideX + zOffset + x, 3.99f, insideZ - xOffset + z));
+        scaleMatrix = scale(mat4(1.0f), vec3(23.0f, 0.1f, 23.0f));
+        modelMatrix = translateMatrix * scaleMatrix;
+        shader.setMat4("modelMatrix", modelMatrix);
+        glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, (void *) 0);
+        translateMatrix = translate(mat4(1.0f), vec3(insideX - xOffset + x, 3.99f, insideZ + zOffset + z));
+        scaleMatrix = scale(mat4(1.0f), vec3(23.0f, 0.1f, 23.0f));
+        modelMatrix = translateMatrix * scaleMatrix;
+        shader.setMat4("modelMatrix", modelMatrix);
+        glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, (void *) 0);
+        translateMatrix = translate(mat4(1.0f), vec3(insideX + zOffset + x, 3.99f, insideZ - zOffset + z));
+        scaleMatrix = scale(mat4(1.0f), vec3(23.0f, 0.1f, 23.0f));
+        modelMatrix = translateMatrix * scaleMatrix;
+        shader.setMat4("modelMatrix", modelMatrix);
+        glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, (void *) 0);
+        translateMatrix = translate(mat4(1.0f), vec3(insideX - xOffset + x, 3.99f, insideZ + xOffset + z));
+        scaleMatrix = scale(mat4(1.0f), vec3(25.0f, 0.1f, 25.0f));
+        modelMatrix = translateMatrix * scaleMatrix;
+        shader.setMat4("modelMatrix", modelMatrix);
+        glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, (void *) 0);
+        glBindVertexArray(initialCube);
 
-    //animating water as squares
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, fountainTextures[randomTexture-1]);
-    translateMatrix = translate(mat4(1.0f), vec3(insideX + x, 3.998f, insideZ + z));
-    scaleMatrix = scale(mat4(1.0f), vec3(26.0f, 0.01f, 26.0f));
-    modelMatrix = translateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-    translateMatrix = translate(mat4(1.0f), vec3(insideX + zOffset + x, 3.996f, insideZ - zOffset + z));
-    scaleMatrix = scale(mat4(1.0f), vec3(23.0f, 0.01f, 23.0f));
-    modelMatrix = translateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-    translateMatrix = translate(mat4(1.0f), vec3(insideX - xOffset + x, 3.999f, insideZ + xOffset + z));
-    scaleMatrix = scale(mat4(1.0f), vec3(25.0f, 0.01f, 25.0f));
-    modelMatrix = translateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-    //fountain bricks
-    for (int i = 0; i < 2; i++) {
+        //animating water as squares
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, floorTexture);
-        translateMatrix = translate(mat4(1.0f), vec3(insideX + x, 3.999f, insideZ + 7.0f -i* 13.3 + z));
-        scaleMatrix = scale(mat4(1.0f), vec3(27.0f, 0.25f, 2.0f));
+        glBindTexture(GL_TEXTURE_2D, fountainTextures[2]);
+        translateMatrix = translate(mat4(1.0f), vec3(insideX + x, 3.998f, insideZ + z));
+        scaleMatrix = scale(mat4(1.0f), vec3(26.0f, 0.01f, 26.0f));
         modelMatrix = translateMatrix * scaleMatrix;
         shader.setMat4("modelMatrix", modelMatrix);
         glDrawArrays(GL_TRIANGLES, 0, 36);
-    }
-    for (int i = 0; i < 2; i++) {
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, floorTexture);
-        translateMatrix = translate(mat4(1.0f), vec3(insideX + 7.0f -i* 13.3 + x, 3.999f,insideZ + 0.5f + z));
-        scaleMatrix = scale(mat4(1.0f), vec3(2.0f, 0.25f, 27.0f));
+        translateMatrix = translate(mat4(1.0f), vec3(insideX + zOffset + x, 3.996f, insideZ - zOffset + z));
+        scaleMatrix = scale(mat4(1.0f), vec3(23.0f, 0.01f, 23.0f));
         modelMatrix = translateMatrix * scaleMatrix;
         shader.setMat4("modelMatrix", modelMatrix);
         glDrawArrays(GL_TRIANGLES, 0, 36);
-    }*/
+        translateMatrix = translate(mat4(1.0f), vec3(insideX - xOffset + x, 3.999f, insideZ + xOffset + z));
+        scaleMatrix = scale(mat4(1.0f), vec3(25.0f, 0.01f, 25.0f));
+        modelMatrix = translateMatrix * scaleMatrix;
+        shader.setMat4("modelMatrix", modelMatrix);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        //fountain bricks
+        for (int i = 0; i < 2; i++) {
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, floorTexture);
+            translateMatrix = translate(mat4(1.0f), vec3(insideX + x, 3.999f, insideZ + 7.0f -i* 13.3 + z));
+            scaleMatrix = scale(mat4(1.0f), vec3(27.0f, 0.25f, 2.0f));
+            modelMatrix = translateMatrix * scaleMatrix;
+            shader.setMat4("modelMatrix", modelMatrix);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+        for (int i = 0; i < 2; i++) {
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, floorTexture);
+            translateMatrix = translate(mat4(1.0f), vec3(insideX + 7.0f -i* 13.3 + x, 3.999f,insideZ + 0.5f + z));
+            scaleMatrix = scale(mat4(1.0f), vec3(2.0f, 0.25f, 27.0f));
+            modelMatrix = translateMatrix * scaleMatrix;
+            shader.setMat4("modelMatrix", modelMatrix);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
 
-    // this builds a playground
-    glBindVertexArray(initialCube);
-    translateMatrix = translate(mat4(1.0f), vec3(insideX + x, 0.01f, insideZ + z));
-    scaleMatrix = scale(mat4(1.0f), vec3(27.0f, 0.01f, 27.0));
-    modelMatrix = translateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, playgroundTextures[0]);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-    //white floor
-    for (int i = 0; i < 2; i++) {
+    } else {
+        // this builds a playground
+        glBindVertexArray(initialCube);
+        translateMatrix = translate(mat4(1.0f), vec3(insideX + x, 0.01f, insideZ + z));
+        scaleMatrix = scale(mat4(1.0f), vec3(27.0f, 0.01f, 27.0));
+        modelMatrix = translateMatrix * scaleMatrix;
+        shader.setMat4("modelMatrix", modelMatrix);
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, playgroundTextures[1]);
-        translateMatrix = translate(mat4(1.0f), vec3(insideX + x, 0.02f, insideZ + 7.0f -i* 13.3 + z));
-        scaleMatrix = scale(mat4(1.0f), vec3(27.0f, 0.01f, 2.0f));
+        glBindTexture(GL_TEXTURE_2D, playgroundTextures[0]);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        //white floor
+        for (int i = 0; i < 2; i++) {
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, playgroundTextures[1]);
+            translateMatrix = translate(mat4(1.0f), vec3(insideX + x, 0.02f, insideZ + 7.0f -i* 13.3 + z));
+            scaleMatrix = scale(mat4(1.0f), vec3(27.0f, 0.01f, 2.0f));
+            modelMatrix = translateMatrix * scaleMatrix;
+            shader.setMat4("modelMatrix", modelMatrix);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+            translateMatrix = translate(mat4(1.0f), vec3(insideX + 7.0f -i* 13.3 + x, 0.02f,insideZ + 0.5f + z));
+            scaleMatrix = scale(mat4(1.0f), vec3(2.0f, 0.01f, 27.0f));
+            modelMatrix = translateMatrix * scaleMatrix;
+            shader.setMat4("modelMatrix", modelMatrix);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+        // the goals
+        for (int i = 0; i < 2; i++) {
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, playgroundTextures[2]);
+            translateMatrix = translate(mat4(1.0f), vec3(insideX + x + 7, 2.5f, insideZ + z));
+            if(i==0){translateMatrix = translate(mat4(1.0f), vec3(insideX + x - 7, 2.5f, insideZ + z));}
+            scaleMatrix = scale(mat4(1.0f), vec3(0.01f, 2.5f, 27.0));
+            modelMatrix = translateMatrix * scaleMatrix;
+            shader.setMat4("modelMatrix", modelMatrix);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+        // the goalkeepers
+        float currentTime = glfwGetTime();
+        float radius = 5.6f;
+        float speed = 1.0f;
+        float xPos = radius * cos(currentTime * speed);
+        float zPos = radius * sin(currentTime * speed);
+        for (int i = 0; i < 2; i++) {
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, playgroundTextures[4]);
+            if(i==0){glBindTexture(GL_TEXTURE_2D, playgroundTextures[3]);}
+            translateMatrix = translate(mat4(1.0f), vec3(insideX + x + 6, 2.5f, insideZ + z+zPos));
+            if(i==0){translateMatrix = translate(mat4(1.0f), vec3(insideX + x - 6, 2.5f, insideZ + z-zPos));}
+            scaleMatrix = scale(mat4(1.0f), vec3(0.01f, 2.5f, 7.0));
+            modelMatrix = translateMatrix * scaleMatrix;
+            shader.setMat4("modelMatrix", modelMatrix);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+        //the ball
+        glBindVertexArray(sphere);
+        translateMatrix = translate(mat4(1.0f), vec3(insideX + x+xPos, 1.0f, insideZ + z+zPos));
+        scaleMatrix = scale(mat4(1.0f), vec3(2.0f, 0.75f, 2.0));
         modelMatrix = translateMatrix * scaleMatrix;
         shader.setMat4("modelMatrix", modelMatrix);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-        translateMatrix = translate(mat4(1.0f), vec3(insideX + 7.0f -i* 13.3 + x, 0.02f,insideZ + 0.5f + z));
-        scaleMatrix = scale(mat4(1.0f), vec3(2.0f, 0.01f, 27.0f));
-        modelMatrix = translateMatrix * scaleMatrix;
-        shader.setMat4("modelMatrix", modelMatrix);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-    }
-    // the goals
-    for (int i = 0; i < 2; i++) {
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, playgroundTextures[2]);
-        translateMatrix = translate(mat4(1.0f), vec3(insideX + x + 7, 2.5f, insideZ + z));
-        if(i==0){translateMatrix = translate(mat4(1.0f), vec3(insideX + x - 7, 2.5f, insideZ + z));}
-        scaleMatrix = scale(mat4(1.0f), vec3(0.01f, 2.5f, 27.0));
-        modelMatrix = translateMatrix * scaleMatrix;
-        shader.setMat4("modelMatrix", modelMatrix);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-    }
-    // the goalkeepers
-    float currentTime = glfwGetTime();
-    float radius = 5.6f;
-    float speed = 1.0f;
-    float xPos = radius * cos(currentTime * speed);
-    float zPos = radius * sin(currentTime * speed);
-    for (int i = 0; i < 2; i++) {
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, playgroundTextures[4]);
-        if(i==0){glBindTexture(GL_TEXTURE_2D, playgroundTextures[3]);}
-        translateMatrix = translate(mat4(1.0f), vec3(insideX + x + 6, 2.5f, insideZ + z+zPos));
-        if(i==0){translateMatrix = translate(mat4(1.0f), vec3(insideX + x - 6, 2.5f, insideZ + z-zPos));}
-        scaleMatrix = scale(mat4(1.0f), vec3(0.01f, 2.5f, 7.0));
-        modelMatrix = translateMatrix * scaleMatrix;
-        shader.setMat4("modelMatrix", modelMatrix);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-    }
-    //the ball
-    glBindVertexArray(sphere);
-    translateMatrix = translate(mat4(1.0f), vec3(insideX + x+xPos, 1.0f, insideZ + z+zPos));
-    scaleMatrix = scale(mat4(1.0f), vec3(2.0f, 0.75f, 2.0));
-    modelMatrix = translateMatrix * scaleMatrix;
-    shader.setMat4("modelMatrix", modelMatrix);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, playgroundTextures[5]);
-    glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, (void *) 0);
+        glBindTexture(GL_TEXTURE_2D, playgroundTextures[5]);
+        glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, (void *) 0);
 
-    return AreaConstants{4, randomTexture, 0, 0, 0};
+    }
+    return AreaConstants{4, 0, randomSpecificType, 0, 0};
 }
 
 

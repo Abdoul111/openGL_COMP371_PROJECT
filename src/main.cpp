@@ -258,11 +258,11 @@ int main() {
         depthShader.use();
 
         depthShader.setInt("nrLights", pointLightPositions.size());
-
+        depthShader.setBool("isNight", isNight);
+        depthShader.setBool("noShadows", noShadows);
         for (int m = 0; m < pointLightPositions.size(); m++) {
             for (unsigned int i = 0; i < 6; ++i)
                 depthShader.setMat4("shadowMatrices[" + std::to_string(i * m + i) + "]", shadowTransforms[i]);
-
         }
         depthShader.setFloat("far_plane", far_plane);
         depthShader.setVec3("lightPos", lightPos);

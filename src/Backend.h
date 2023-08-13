@@ -35,6 +35,7 @@ struct AreaConstants {
  */
 struct SquareConstants {
     AreaConstants areas[4];
+    int treeRandomTexture;
 };
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -44,22 +45,19 @@ GLuint loadTexture(const char* filename);
 unsigned int buildTextures();
 
 void drawSquare(Shader shader, Shader lightShader, GLuint initialCube, GLuint sphere, float x, float z);
-void buildBackground(Shader &shader, GLuint blueBigCube, float x, float z, float insideX, float insideZ);
 AreaConstants buildBuilding(Shader &shader, GLuint initialCube, float x, float z, float insideX, float insideZ, int texture, int random3, int random4, int random5);
 
 AreaConstants buildScrapers(Shader &shader, GLuint initialCube, float x, float z, float insideX, float insideZ, int texture, int random3, int random4, int random5);
-void buildTree(Shader &shader, GLuint initialCube, float x, float z);
+int buildTree(Shader &shader, GLuint initialCube, float x, float z, int randomTexture);
 void buildStreetAndDecor(Shader &shader, GLuint initialCube, GLuint sphere, float x, float z);
 void buildBlimp(Shader &shader, GLuint initialCube, GLuint sphere, float x, float z,int randomValue);
 AreaConstants buildShops(Shader &shader, GLuint initialCube, float x, float z, float insideX, float insideZ, int texture, int random3, int random4, int random5);
 AreaConstants buildFountain(Shader &shader, GLuint initialCube, GLuint sphere, float x, float z, float insideX, float insideZ, int texture, int random3, int random4, int random5);
-void buildPeople(Shader &shader, GLuint initialCube, float x, float z, float insideX, float insideZ);
 
 void setShaderValues(Shader &shader);
 
 void buildLightCube(Shader &shader, GLuint sphere,float x, float z);
 
-bool collisionDetection();
 void updateCurrentSquareHights();
 
 AreaConstants drawArea(Shader shader, GLuint initialCube, GLuint sphere, float x, float z, float insideX, float insideZ, int type, int texture, int random3, int random4, int random5);
