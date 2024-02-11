@@ -1,3 +1,4 @@
+
 <h1> City Simulation Brief report</h1>
 <h2 align="center">Hicham Kitaz 40188246</h2> 
 <h2 align="center">Abd Alwahed Haj Omar 40246177</h2> 
@@ -11,6 +12,13 @@ showing the potential of interactive simulations. Welcome to a city that evolves
 <p align="center">
   <img src="https://github.com/Abdoul111/openGL_COMP371_PROJECT/assets/111257875/bf103f19-dbd9-452b-b24c-1a053478a986">
 </p>
+<h3>Demo</h3>
+<h4>Video Overview</h4>
+<a href="https://youtu.be/zP9QrJyelwk">
+  <img align="center" src="https://github.com/Abdoul111/openGL_COMP371_PROJECT/assets/111257875/35eb3096-b164-47a7-b353-27c9779e7fbd" alt="image">
+</a>
+
+
 <h3>Roles</h3>
 <p><strong>Abdelwahed:</strong> Redefined procedural generation by crafting an algorithm that uses advanced
 object-oriented programming and data structures. As you move through the world, a dynamic,
