@@ -1,7 +1,7 @@
 
 <h1> City Simulation Brief report</h1>
-<h2 align="center">Hicham Kitaz 40188246</h2> 
-<h2 align="center">Abd Alwahed Haj Omar 40246177</h2> 
+<h2 align="center">Hicham Kitaz</h2> 
+<h2 align="center">Abd Alwahed Haj Omar</h2> 
 <h3>Introduction</h3>
 <p>Imagine a city that breathes and grows as you explore – a digital realm where streets form and
 buildings rise with each step. Our project harnessed OpenGL's power and procedural generation's
